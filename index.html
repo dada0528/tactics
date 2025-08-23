@@ -24,6 +24,10 @@
   .overlay{position:absolute;inset:0;background:rgba(0,0,0,.1);display:none}
   .overlay.playing{display:block}
   .copyright{position:absolute;right:10px;bottom:5px;font-size:12px;color:#aab8d6;opacity:.8;}
+
+  /* 圖示：在自身中心為旋轉原點；rot-on 狀態下反向旋轉 -90° */
+  .icon{ transform-box: fill-box; transform-origin: center; }
+  .rot-on .icon{ transform: rotate(-90deg); } /* <-- 反向旋轉，讓頭永遠向上 */
 </style>
 </head>
 <body>
@@ -49,7 +53,7 @@
   <div class="board" id="board">
     <div class="overlay" id="playOverlay" title="播放中…"></div>
 
-    <!-- 旋轉時只旋轉 #world，同步切換 viewBox -->
+    <!-- 旋轉時只旋轉 #world；同時切換 viewBox 比例避免裁切 -->
     <svg id="court" viewBox="0 0 6500 13800" aria-label="Badminton Tactics Board" preserveAspectRatio="xMidYMid meet">
       <g id="world" transform="">
         <defs>
@@ -81,25 +85,25 @@
           <rect x="200" y="6760" width="6100" height="40" fill="#fff"/>
         </g>
 
-        <!-- A隊（900×900） -->
+        <!-- A隊（圖示 900×900，包 .icon 以便局部旋轉） -->
         <g id="A1" class="draggable" data-role="A1" transform="translate(3250,10800)">
-          <image x="-450" y="-450" width="900" height="900" href="red.png" xlink:href="red.png"/>
+          <g class="icon"><image x="-450" y="-450" width="900" height="900" href="red.png" xlink:href="red.png"/></g>
         </g>
         <g id="A2" class="draggable" data-role="A2" transform="translate(3250,9000)">
-          <image x="-450" y="-450" width="900" height="900" href="red.png" xlink:href="red.png"/>
+          <g class="icon"><image x="-450" y="-450" width="900" height="900" href="red.png" xlink:href="red.png"/></g>
         </g>
 
-        <!-- B隊（900×900） -->
+        <!-- B隊（圖示 900×900） -->
         <g id="B1" class="draggable" data-role="B1" transform="translate(3250,4800)">
-          <image x="-450" y="-450" width="900" height="900" href="blue.png" xlink:href="blue.png"/>
+          <g class="icon"><image x="-450" y="-450" width="900" height="900" href="blue.png" xlink:href="blue.png"/></g>
         </g>
         <g id="B2" class="draggable" data-role="B2" transform="translate(3250,3200)">
-          <image x="-450" y="-450" width="900" height="900" href="blue.png" xlink:href="blue.png"/>
+          <g class="icon"><image x="-450" y="-450" width="900" height="900" href="blue.png" xlink:href="blue.png"/></g>
         </g>
 
-        <!-- 羽球（1000×1000） -->
+        <!-- 羽球（1000×1000，同樣包 .icon） -->
         <g id="SHUTTLE" class="draggable" data-role="S" transform="translate(3250,6500)">
-          <image x="-500" y="-500" width="1000" height="1000" href="shuttle.png" xlink:href="shuttle.png"/>
+          <g class="icon"><image x="-500" y="-500" width="1000" height="1000" href="shuttle.png" xlink:href="shuttle.png"/></g>
         </g>
       </g>
     </svg>
@@ -123,7 +127,7 @@
   const playBtn    =document.getElementById('playBtn');
   const playOverlay=document.getElementById('playOverlay');
 
-  // 依目前 viewBox 比例自適應，不裁切
+  // 依目前 viewBox 比例自適應
   function fitBoard(){
     const vb = svg.viewBox.baseVal;
     const ratio = vb.height / vb.width; // H/W
@@ -140,7 +144,7 @@
 
   // 狀態
   const BOUNDS={xMin:200,yMin:200,xMax:6300,yMax:13600};
-  const RAD   ={piece:450, shuttle:500}; // 放大後半徑
+  const RAD   ={piece:450, shuttle:500};
   const defaults={
     singles:{A1:{x:3250,y:10800},B1:{x:3250,y:3000},S:{x:3250,y:6500}},
     doubles:{A1:{x:3250,y:10800},A2:{x:3250,y:9000},B1:{x:3250,y:4800},B2:{x:3250,y:3200},S:{x:3250,y:6500}}
@@ -153,19 +157,28 @@
 
   resetBtn.addEventListener('click',()=>{ state.positions=clone(defaults[state.mode]); renderPositions(true); });
 
-  // 旋轉：同步切換 viewBox 與世界座標映射（避免裁切）
+  // 旋轉：切換 viewBox / world 旋轉；並「反向」旋轉 icon 讓頭向上
   rotateBtn.addEventListener('click',()=>{
     state.rotated = !state.rotated;
     if(state.rotated){
-      // 橫式 viewBox：13800×6500；把 (x,y)->(13800-y, x)
-      svg.setAttribute('viewBox', `0 0 ${VB_H} ${VB_W}`);
-      world.setAttribute('transform', `translate(${VB_H} 0) rotate(90)`);
+      svg.setAttribute('viewBox', `0 0 ${VB_H} ${VB_W}`);                 // 橫式
+      world.setAttribute('transform', `translate(${VB_H} 0) rotate(90)`); // 場地轉 90°
+      document.documentElement.classList.add('rot-on');                   // CSS: icon 轉 -90°
+      setIconsRotation(-90);                                             // JS 雙保險
     }else{
-      svg.setAttribute('viewBox', `0 0 ${VB_W} ${VB_H}`);
+      svg.setAttribute('viewBox', `0 0 ${VB_W} ${VB_H}`);                 // 直式
       world.setAttribute('transform', ``);
+      document.documentElement.classList.remove('rot-on');
+      setIconsRotation(0);
     }
-    fitBoard(); // 依新比例重算尺寸
+    fitBoard();
   });
+
+  // 直接對每個 .icon 設 SVG transform（避免少數環境 CSS 不生效）
+  function setIconsRotation(deg){
+    const icons = svg.querySelectorAll('.icon');
+    icons.forEach(ic => ic.setAttribute('transform', deg ? `rotate(${deg})` : ''));
+  }
 
   modeSel.addEventListener('change', e=>{
     state.mode=e.target.value==='singles'?'singles':'doubles';
@@ -173,7 +186,7 @@
     updateVisibilityByMode(state.mode); renderPositions(true);
   });
 
-  // 拖曳（用 world 的 CTM 轉回邏輯座標，因此旋轉後方向仍正確）
+  // 拖曳（用 world 的 CTM 轉回邏輯座標，旋轉後方向仍正確）
   const draggables=svg.querySelectorAll('.draggable');
   draggables.forEach(makeDraggable);
   function makeDraggable(el){
