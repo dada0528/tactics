@@ -17,9 +17,7 @@
   button[disabled]{opacity:.5;cursor:not-allowed}
   .wrap{position:relative;min-height:0;display:flex;justify-content:center;align-items:center;padding:8px;}
   .board{background:#07101f;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.45), inset 0 0 0 1px var(--border);
-    display:flex;align-items:center;justify-content:center;position:relative;transition:transform .35s ease;
-    transform-origin:center center;}
-  .board.rot90{ transform:rotate(90deg) scale(var(--rot-scale,0.92)); }
+    display:flex;align-items:center;justify-content:center;position:relative;}
   svg{width:96%;height:96%;display:block;touch-action:none}
   .draggable{cursor:grab}
   .dragging{cursor:grabbing;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
@@ -50,66 +48,73 @@
 <div class="wrap" id="wrap">
   <div class="board" id="board">
     <div class="overlay" id="playOverlay" title="播放中…"></div>
-    <svg id="court" viewBox="0 0 6500 13800" aria-label="Badminton Tactics Board">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#165a4a"/><stop offset="100%" stop-color="#1e6f5c"/>
-        </linearGradient>
-        <pattern id="netgrid" width="140" height="140" patternUnits="userSpaceOnUse">
-          <path d="M0 0H140M0 0V140" stroke="#e5e7eb" stroke-opacity=".55" stroke-width="10"/>
-        </pattern>
-      </defs>
 
-      <!-- 場地 -->
-      <rect x="200" y="200" width="6100" height="13400" rx="20" fill="url(#g)"/>
-      <g stroke="#ffffff" stroke-width="60" fill="none">
-        <rect x="200" y="200" width="6100" height="13400"/>
-        <rect x="660" y="200" width="5180" height="13400"/>
-        <line x1="200" y1="4920" x2="6300" y2="4920"/>
-        <line x1="200" y1="8880" x2="6300" y2="8880"/>
-        <line x1="200" y1="960"  x2="6300" y2="960"/>
-        <line x1="200" y1="12840" x2="6300" y2="12840"/>
-        <line x1="3250" y1="200"  x2="3250" y2="4920"/>
-        <line x1="3250" y1="8880" x2="3250" y2="13600"/>
-      </g>
+    <!-- 旋轉時只旋轉 #world，同步切換 viewBox -->
+    <svg id="court" viewBox="0 0 6500 13800" aria-label="Badminton Tactics Board" preserveAspectRatio="xMidYMid meet">
+      <g id="world" transform="">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#165a4a"/><stop offset="100%" stop-color="#1e6f5c"/>
+          </linearGradient>
+          <pattern id="netgrid" width="140" height="140" patternUnits="userSpaceOnUse">
+            <path d="M0 0H140M0 0V140" stroke="#e5e7eb" stroke-opacity=".55" stroke-width="10"/>
+          </pattern>
+        </defs>
 
-      <!-- 網帶 -->
-      <g id="net">
-        <rect x="200" y="6770" width="6100" height="260" fill="#2a2945" opacity="0.9"/>
-        <rect x="200" y="6770" width="6100" height="260" fill="url(#netgrid)" opacity="0.9"/>
-        <rect x="200" y="6760" width="6100" height="40" fill="#fff"/>
-      </g>
+        <!-- 場地 -->
+        <rect x="200" y="200" width="6100" height="13400" rx="20" fill="url(#g)"/>
+        <g stroke="#ffffff" stroke-width="60" fill="none">
+          <rect x="200" y="200" width="6100" height="13400"/>
+          <rect x="660" y="200" width="5180" height="13400"/>
+          <line x1="200" y1="4920" x2="6300" y2="4920"/>
+          <line x1="200" y1="8880" x2="6300" y2="8880"/>
+          <line x1="200" y1="960"  x2="6300" y2="960"/>
+          <line x1="200" y1="12840" x2="6300" y2="12840"/>
+          <line x1="3250" y1="200"  x2="3250" y2="4920"/>
+          <line x1="3250" y1="8880" x2="3250" y2="13600"/>
+        </g>
 
-      <!-- A隊 -->
-      <g id="A1" class="draggable" data-role="A1" transform="translate(3250,10800)">
-        <image x="-400" y="-400" width="800" height="800" href="red.png" xlink:href="red.png"/>
-      </g>
-      <g id="A2" class="draggable" data-role="A2" transform="translate(3250,9000)">
-        <image x="-400" y="-400" width="800" height="800" href="red.png" xlink:href="red.png"/>
-      </g>
+        <!-- 網帶 -->
+        <g id="net">
+          <rect x="200" y="6770" width="6100" height="260" fill="#2a2945" opacity="0.9"/>
+          <rect x="200" y="6770" width="6100" height="260" fill="url(#netgrid)" opacity="0.9"/>
+          <rect x="200" y="6760" width="6100" height="40" fill="#fff"/>
+        </g>
 
-      <!-- B隊 -->
-      <g id="B1" class="draggable" data-role="B1" transform="translate(3250,4800)">
-        <image x="-400" y="-400" width="800" height="800" href="blue.png" xlink:href="blue.png"/>
-      </g>
-      <g id="B2" class="draggable" data-role="B2" transform="translate(3250,3200)">
-        <image x="-400" y="-400" width="800" height="800" href="blue.png" xlink:href="blue.png"/>
-      </g>
+        <!-- A隊（900×900） -->
+        <g id="A1" class="draggable" data-role="A1" transform="translate(3250,10800)">
+          <image x="-450" y="-450" width="900" height="900" href="red.png" xlink:href="red.png"/>
+        </g>
+        <g id="A2" class="draggable" data-role="A2" transform="translate(3250,9000)">
+          <image x="-450" y="-450" width="900" height="900" href="red.png" xlink:href="red.png"/>
+        </g>
 
-      <!-- 羽球 -->
-      <g id="SHUTTLE" class="draggable" data-role="S" transform="translate(3250,6500)">
-        <image x="-450" y="-450" width="900" height="900" href="shuttle.png" xlink:href="shuttle.png"/>
+        <!-- B隊（900×900） -->
+        <g id="B1" class="draggable" data-role="B1" transform="translate(3250,4800)">
+          <image x="-450" y="-450" width="900" height="900" href="blue.png" xlink:href="blue.png"/>
+        </g>
+        <g id="B2" class="draggable" data-role="B2" transform="translate(3250,3200)">
+          <image x="-450" y="-450" width="900" height="900" href="blue.png" xlink:href="blue.png"/>
+        </g>
+
+        <!-- 羽球（1000×1000） -->
+        <g id="SHUTTLE" class="draggable" data-role="S" transform="translate(3250,6500)">
+          <image x="-500" y="-500" width="1000" height="1000" href="shuttle.png" xlink:href="shuttle.png"/>
+        </g>
       </g>
     </svg>
+
     <div class="copyright">Design by Kunta</div>
   </div>
 </div>
 
 <script>
 (function(){
+  const VB_W = 6500, VB_H = 13800; // 直式 viewBox
   const board  = document.getElementById('board');
   const topbar = document.getElementById('topbar');
   const svg    = document.getElementById('court');
+  const world  = document.getElementById('world');
   const modeSel= document.getElementById('mode');
   const resetBtn=document.getElementById('resetBtn');
   const rotateBtn=document.getElementById('rotateBtn');
@@ -118,50 +123,49 @@
   const playBtn    =document.getElementById('playBtn');
   const playOverlay=document.getElementById('playOverlay');
 
-  // 自適應尺寸
+  // 依目前 viewBox 比例自適應，不裁切
   function fitBoard(){
+    const vb = svg.viewBox.baseVal;
+    const ratio = vb.height / vb.width; // H/W
     const availH = window.innerHeight - topbar.offsetHeight - 16;
     const availW = document.documentElement.clientWidth - 16;
-    const hFromW = availW * (134/61);
-    const wFromH = availH * (61/134);
-    board.style.height = Math.min(availH,hFromW)+"px";
-    board.style.width  = Math.min(availW,wFromH)+"px";
+    const hFromW = availW * ratio;
+    const wFromH = availH / ratio;
+    board.style.height = Math.min(availH, hFromW) + "px";
+    board.style.width  = Math.min(availW, wFromH) + "px";
   }
   window.addEventListener('resize', fitBoard);
   window.addEventListener('orientationchange', ()=> setTimeout(fitBoard,60));
   fitBoard();
 
   // 狀態
+  const BOUNDS={xMin:200,yMin:200,xMax:6300,yMax:13600};
+  const RAD   ={piece:450, shuttle:500}; // 放大後半徑
   const defaults={
     singles:{A1:{x:3250,y:10800},B1:{x:3250,y:3000},S:{x:3250,y:6500}},
     doubles:{A1:{x:3250,y:10800},A2:{x:3250,y:9000},B1:{x:3250,y:4800},B2:{x:3250,y:3200},S:{x:3250,y:6500}}
   };
   let state={mode:'doubles',positions:clone(defaults.doubles),rotated:false};
-  let recording=false, recordStartAt=0, steps=[], startSnapshot=null;
-  let isPlaying=false, stopPlay=null;
+  let recording=false, steps=[], startSnapshot=null;
+  let isPlaying=false;
 
   modeSel.value=state.mode; updateVisibilityByMode(state.mode); renderPositions();
 
   resetBtn.addEventListener('click',()=>{ state.positions=clone(defaults[state.mode]); renderPositions(true); });
 
-  // 修正版：旋轉 90°
+  // 旋轉：同步切換 viewBox 與世界座標映射（避免裁切）
   rotateBtn.addEventListener('click',()=>{
-    state.rotated=!state.rotated;
+    state.rotated = !state.rotated;
     if(state.rotated){
-      fitRotateScale();
-      board.classList.add('rot90');
+      // 橫式 viewBox：13800×6500；把 (x,y)->(13800-y, x)
+      svg.setAttribute('viewBox', `0 0 ${VB_H} ${VB_W}`);
+      world.setAttribute('transform', `translate(${VB_H} 0) rotate(90)`);
     }else{
-      board.classList.remove('rot90');
+      svg.setAttribute('viewBox', `0 0 ${VB_W} ${VB_H}`);
+      world.setAttribute('transform', ``);
     }
+    fitBoard(); // 依新比例重算尺寸
   });
-  function fitRotateScale(){
-    const wrap=document.getElementById('wrap');
-    const w=wrap.clientWidth, h=wrap.clientHeight;
-    const s=Math.max(0.8, Math.min(0.98*w/h, 0.98*h/w));
-    board.style.setProperty('--rot-scale', s);
-  }
-  window.addEventListener('resize',()=>{ if(state.rotated) fitRotateScale(); });
-  window.addEventListener('orientationchange',()=>{ setTimeout(()=>{ if(state.rotated) fitRotateScale(); },60); });
 
   modeSel.addEventListener('change', e=>{
     state.mode=e.target.value==='singles'?'singles':'doubles';
@@ -169,7 +173,7 @@
     updateVisibilityByMode(state.mode); renderPositions(true);
   });
 
-  // 拖曳
+  // 拖曳（用 world 的 CTM 轉回邏輯座標，因此旋轉後方向仍正確）
   const draggables=svg.querySelectorAll('.draggable');
   draggables.forEach(makeDraggable);
   function makeDraggable(el){
@@ -185,14 +189,16 @@
       const move=ev=>{
         const p=getPt(ev);
         const nx=init.x+(p.x-start.x), ny=init.y+(p.y-start.y);
-        state.positions[role]=clamp(nx,ny,role);
-        setPos(el,state.positions[role].x,state.positions[role].y);
+        const c=clamp(nx,ny,role);
+        state.positions[role]=c; setPos(el,c.x,c.y);
       };
       const up=()=>{
         el.releasePointerCapture(e.pointerId); el.classList.remove('dragging');
         svg.removeEventListener('pointermove',move);
+        svg.removeEventListener('pointerup',up);
+        svg.removeEventListener('pointercancel',up);
         if(recording){
-          steps.push({role,from:{...init},to:{...state.positions[role]},mode:state.mode});
+          steps.push({ role, from:{...init}, to:{...state.positions[role]}, mode: state.mode });
           playBtn.disabled=steps.length===0;
         }
       };
@@ -202,28 +208,87 @@
     });
   }
 
-  function getPt(e){ const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
-  function clamp(x,y,role){ const r=(role==='S')?450:400; return {x:Math.min(6300-r,Math.max(200+r,x)),y:Math.min(13600-r,Math.max(200+r,y))}; }
+  function getPt(e){
+    const pt=svg.createSVGPoint();
+    pt.x=e.clientX; pt.y=e.clientY;
+    const m = world.getScreenCTM().inverse(); // 包含旋轉/平移
+    return pt.matrixTransform(m);
+  }
+  function clamp(x,y,role){
+    const r=(role==='S')?RAD.shuttle:RAD.piece;
+    return { x: Math.min(BOUNDS.xMax - r, Math.max(BOUNDS.xMin + r, x)),
+             y: Math.min(BOUNDS.yMax - r, Math.max(BOUNDS.yMin + r, y)) };
+  }
   function setPos(el,x,y){ el.setAttribute('transform',`translate(${x},${y})`); }
-  function updateVisibilityByMode(mode){ const show=mode==='doubles'; document.getElementById('A2').style.display=show?'':'none'; document.getElementById('B2').style.display=show?'':'none'; }
-  function renderPositions(){ ['A1','A2','B1','B2','S'].forEach(id=>{ const el=document.getElementById(id==='S'?'SHUTTLE':id); if(!el)return; if(state.mode==='singles'&&(id==='A2'||id==='B2')){el.style.display='none';return;} el.style.display=''; setPos(el,(state.positions[id]||defaults[state.mode][id]).x,(state.positions[id]||defaults[state.mode][id]).y); }); }
+  function updateVisibilityByMode(mode){
+    const show=mode==='doubles';
+    document.getElementById('A2').style.display=show?'':'none';
+    document.getElementById('B2').style.display=show?'':'none';
+  }
+  function renderPositions(){
+    ['A1','A2','B1','B2','S'].forEach(id=>{
+      const el=document.getElementById(id==='S'?'SHUTTLE':id);
+      if(!el) return;
+      if(state.mode==='singles'&&(id==='A2'||id==='B2')){ el.style.display='none'; return; }
+      el.style.display='';
+      const p=state.positions[id]||defaults[state.mode][id];
+      setPos(el,p.x,p.y);
+    });
+  }
   function clone(o){ return JSON.parse(JSON.stringify(o)); }
 
-  // 記錄
-  recStartBtn.addEventListener('click',()=>{ steps=[];recordStartAt=Date.now();recording=true;startSnapshot={mode:state.mode,positions:clone(state.positions)}; recStartBtn.disabled=true;recStopBtn.disabled=false;playBtn.disabled=true; });
-  recStopBtn.addEventListener('click',()=>{ recording=false;recStartBtn.disabled=false;recStopBtn.disabled=true;playBtn.disabled=steps.length===0; });
-
-  // 回放
-  playBtn.addEventListener('click',()=>{
-    if(steps.length===0||isPlaying)return;
-    isPlaying=true; playOverlay.classList.add('playing'); recStartBtn.disabled=recStopBtn.disabled=true; modeSel.disabled=resetBtn.disabled=rotateBtn.disabled=true;
-    stopPlay=async()=>{isPlaying=false;playOverlay.classList.remove('playing');recStartBtn.disabled=false;recStopBtn.disabled=true;modeSel.disabled=resetBtn.disabled=rotateBtn.disabled=false;};
-    (async()=>{
-      if(startSnapshot){ state.mode=startSnapshot.mode; modeSel.value=startSnapshot.mode; updateVisibilityByMode(state.mode); state.positions=clone(startSnapshot.positions); renderPositions(true); }
-      for(const step of steps){ if(!isPlaying)break; if(state.mode!==step.mode){state.mode=step.mode;modeSel.value=step.mode;updateVisibilityByMode(state.mode);} const el=document.getElementById(step.role==='S'?'SHUTTLE':step.role); setPos(el,step.from.x,step.from.y); const dist=Math.hypot(step.to.x-step.from.x,step.to.y-step.from.y); const dur=Math.max(250,600*(dist/1800)); await animateMove(el,step.from,step.to,dur); state.positions[step.role]={...step.to}; } await stopPlay();})();
+  // 記錄 / 回放（回放先回到開始記錄的站位）
+  recStartBtn.addEventListener('click',()=>{
+    steps=[]; recording=true;
+    startSnapshot={ mode: state.mode, positions: clone(state.positions) };
+    recStartBtn.disabled=true; recStopBtn.disabled=false; playBtn.disabled=true;
   });
-  function animateMove(el,from,to,dur){ return new Promise(res=>{ const start=performance.now(); const tick=now=>{ const p=Math.min(1,(now-start)/dur); const e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2; setPos(el,from.x+(to.x-from.x)*e,from.y+(to.y-from.y)*e); if(p<1&&isPlaying)requestAnimationFrame(tick); else res(); }; requestAnimationFrame(tick); }); }
-  playOverlay.addEventListener('click',()=>{ if(isPlaying&&stopPlay) stopPlay(); });
+  recStopBtn.addEventListener('click',()=>{
+    recording=false;
+    recStartBtn.disabled=false; recStopBtn.disabled=true; playBtn.disabled=steps.length===0;
+  });
+
+  playBtn.addEventListener('click',()=>{
+    if(steps.length===0||isPlaying) return;
+    isPlaying=true; playOverlay.classList.add('playing');
+    recStartBtn.disabled=recStopBtn.disabled=true; modeSel.disabled=resetBtn.disabled=rotateBtn.disabled=true;
+
+    const ease=(t)=> t<.5?2*t*t : 1-Math.pow(-2*t+2,2)/2;
+    function animateMove(el,from,to,dur){ return new Promise(res=>{
+      const t0=performance.now();
+      const tick=(now)=>{
+        const p=Math.min(1,(now-t0)/dur), e=ease(p);
+        setPos(el, from.x+(to.x-from.x)*e, from.y+(to.y-from.y)*e);
+        if(p<1 && isPlaying) requestAnimationFrame(tick); else res();
+      };
+      requestAnimationFrame(tick);
+    });}
+
+    (async()=>{
+      if(startSnapshot){
+        state.mode=startSnapshot.mode;
+        modeSel.value=startSnapshot.mode;
+        updateVisibilityByMode(state.mode);
+        state.positions=clone(startSnapshot.positions);
+        renderPositions(true);
+      }
+      for(const step of steps){
+        if(!isPlaying) break;
+        if(state.mode!==step.mode){
+          state.mode=step.mode; modeSel.value=step.mode; updateVisibilityByMode(state.mode);
+        }
+        const el=document.getElementById(step.role==='S'?'SHUTTLE':step.role);
+        setPos(el, step.from.x, step.from.y);
+        const dist=Math.hypot(step.to.x-step.from.x, step.to.y-step.from.y);
+        const dur=Math.max(250, 600*(dist/1800));
+        await animateMove(el, step.from, step.to, dur);
+        state.positions[step.role]={...step.to};
+      }
+      isPlaying=false; playOverlay.classList.remove('playing');
+      recStartBtn.disabled=false; recStopBtn.disabled=true; modeSel.disabled=resetBtn.disabled=rotateBtn.disabled=false;
+    })();
+  });
+  playOverlay.addEventListener('click',()=>{ if(isPlaying){ isPlaying=false; } });
 
 })();
 </script>
