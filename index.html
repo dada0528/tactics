@@ -17,7 +17,9 @@
   button[disabled]{opacity:.5;cursor:not-allowed}
   .wrap{position:relative;min-height:0;display:flex;justify-content:center;align-items:center;padding:8px;}
   .board{background:#07101f;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.45), inset 0 0 0 1px var(--border);
-    display:flex;align-items:center;justify-content:center;position:relative;transition:transform .35s ease;}
+    display:flex;align-items:center;justify-content:center;position:relative;transition:transform .35s ease;
+    transform-origin:center center;}
+  .board.rot90{ transform:rotate(90deg) scale(var(--rot-scale,0.92)); }
   svg{width:96%;height:96%;display:block;touch-action:none}
   .draggable{cursor:grab}
   .dragging{cursor:grabbing;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
@@ -40,7 +42,6 @@
   <button id="resetBtn"  title="重置位置">重置</button>
   <button id="rotateBtn" title="旋轉90°檢視">旋轉90°</button>
 
-  <!-- 記錄 / 回放 -->
   <button id="recStartBtn">開始記錄</button>
   <button id="recStopBtn"  disabled>結束記錄</button>
   <button id="playBtn"     disabled>回放</button>
@@ -79,40 +80,152 @@
         <rect x="200" y="6760" width="6100" height="40" fill="#fff"/>
       </g>
 
-      <!-- A隊：red.png -->
+      <!-- A隊 -->
       <g id="A1" class="draggable" data-role="A1" transform="translate(3250,10800)">
-        <image x="-400" y="-400" width="800" height="800" preserveAspectRatio="xMidYMid meet"
-               href="red.png" xlink:href="red.png"/>
+        <image x="-400" y="-400" width="800" height="800" href="red.png" xlink:href="red.png"/>
       </g>
       <g id="A2" class="draggable" data-role="A2" transform="translate(3250,9000)">
-        <image x="-400" y="-400" width="800" height="800" preserveAspectRatio="xMidYMid meet"
-               href="red.png" xlink:href="red.png"/>
+        <image x="-400" y="-400" width="800" height="800" href="red.png" xlink:href="red.png"/>
       </g>
 
-      <!-- B隊：blue.png -->
+      <!-- B隊 -->
       <g id="B1" class="draggable" data-role="B1" transform="translate(3250,4800)">
-        <image x="-400" y="-400" width="800" height="800" preserveAspectRatio="xMidYMid meet"
-               href="blue.png" xlink:href="blue.png"/>
+        <image x="-400" y="-400" width="800" height="800" href="blue.png" xlink:href="blue.png"/>
       </g>
       <g id="B2" class="draggable" data-role="B2" transform="translate(3250,3200)">
-        <image x="-400" y="-400" width="800" height="800" preserveAspectRatio="xMidYMid meet"
-               href="blue.png" xlink:href="blue.png"/>
+        <image x="-400" y="-400" width="800" height="800" href="blue.png" xlink:href="blue.png"/>
       </g>
 
-      <!-- 羽球：shuttle.png -->
+      <!-- 羽球 -->
       <g id="SHUTTLE" class="draggable" data-role="S" transform="translate(3250,6500)">
-        <image x="-450" y="-450" width="900" height="900"
-               preserveAspectRatio="xMidYMid meet"
-               href="shuttle.png" xlink:href="shuttle.png"/>
+        <image x="-450" y="-450" width="900" height="900" href="shuttle.png" xlink:href="shuttle.png"/>
       </g>
     </svg>
-
     <div class="copyright">Design by Kunta</div>
   </div>
 </div>
 
 <script>
-/* 原本的 JS 保留即可（開始記錄、結束記錄、回放），這裡省略展示 */
+(function(){
+  const board  = document.getElementById('board');
+  const topbar = document.getElementById('topbar');
+  const svg    = document.getElementById('court');
+  const modeSel= document.getElementById('mode');
+  const resetBtn=document.getElementById('resetBtn');
+  const rotateBtn=document.getElementById('rotateBtn');
+  const recStartBtn=document.getElementById('recStartBtn');
+  const recStopBtn =document.getElementById('recStopBtn');
+  const playBtn    =document.getElementById('playBtn');
+  const playOverlay=document.getElementById('playOverlay');
+
+  // 自適應尺寸
+  function fitBoard(){
+    const availH = window.innerHeight - topbar.offsetHeight - 16;
+    const availW = document.documentElement.clientWidth - 16;
+    const hFromW = availW * (134/61);
+    const wFromH = availH * (61/134);
+    board.style.height = Math.min(availH,hFromW)+"px";
+    board.style.width  = Math.min(availW,wFromH)+"px";
+  }
+  window.addEventListener('resize', fitBoard);
+  window.addEventListener('orientationchange', ()=> setTimeout(fitBoard,60));
+  fitBoard();
+
+  // 狀態
+  const defaults={
+    singles:{A1:{x:3250,y:10800},B1:{x:3250,y:3000},S:{x:3250,y:6500}},
+    doubles:{A1:{x:3250,y:10800},A2:{x:3250,y:9000},B1:{x:3250,y:4800},B2:{x:3250,y:3200},S:{x:3250,y:6500}}
+  };
+  let state={mode:'doubles',positions:clone(defaults.doubles),rotated:false};
+  let recording=false, recordStartAt=0, steps=[], startSnapshot=null;
+  let isPlaying=false, stopPlay=null;
+
+  modeSel.value=state.mode; updateVisibilityByMode(state.mode); renderPositions();
+
+  resetBtn.addEventListener('click',()=>{ state.positions=clone(defaults[state.mode]); renderPositions(true); });
+
+  // 修正版：旋轉 90°
+  rotateBtn.addEventListener('click',()=>{
+    state.rotated=!state.rotated;
+    if(state.rotated){
+      fitRotateScale();
+      board.classList.add('rot90');
+    }else{
+      board.classList.remove('rot90');
+    }
+  });
+  function fitRotateScale(){
+    const wrap=document.getElementById('wrap');
+    const w=wrap.clientWidth, h=wrap.clientHeight;
+    const s=Math.max(0.8, Math.min(0.98*w/h, 0.98*h/w));
+    board.style.setProperty('--rot-scale', s);
+  }
+  window.addEventListener('resize',()=>{ if(state.rotated) fitRotateScale(); });
+  window.addEventListener('orientationchange',()=>{ setTimeout(()=>{ if(state.rotated) fitRotateScale(); },60); });
+
+  modeSel.addEventListener('change', e=>{
+    state.mode=e.target.value==='singles'?'singles':'doubles';
+    state.positions=clone(defaults[state.mode]);
+    updateVisibilityByMode(state.mode); renderPositions(true);
+  });
+
+  // 拖曳
+  const draggables=svg.querySelectorAll('.draggable');
+  draggables.forEach(makeDraggable);
+  function makeDraggable(el){
+    el.style.touchAction='none';
+    el.addEventListener('pointerdown', e=>{
+      if(isPlaying) return;
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId); el.classList.add('dragging');
+      const role=el.dataset.role;
+      const start=getPt(e);
+      const t=el.transform.baseVal.consolidate();
+      const init=t?{x:t.matrix.e,y:t.matrix.f}:{x:0,y:0};
+      const move=ev=>{
+        const p=getPt(ev);
+        const nx=init.x+(p.x-start.x), ny=init.y+(p.y-start.y);
+        state.positions[role]=clamp(nx,ny,role);
+        setPos(el,state.positions[role].x,state.positions[role].y);
+      };
+      const up=()=>{
+        el.releasePointerCapture(e.pointerId); el.classList.remove('dragging');
+        svg.removeEventListener('pointermove',move);
+        if(recording){
+          steps.push({role,from:{...init},to:{...state.positions[role]},mode:state.mode});
+          playBtn.disabled=steps.length===0;
+        }
+      };
+      svg.addEventListener('pointermove',move);
+      svg.addEventListener('pointerup',up,{once:true});
+      svg.addEventListener('pointercancel',up,{once:true});
+    });
+  }
+
+  function getPt(e){ const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+  function clamp(x,y,role){ const r=(role==='S')?450:400; return {x:Math.min(6300-r,Math.max(200+r,x)),y:Math.min(13600-r,Math.max(200+r,y))}; }
+  function setPos(el,x,y){ el.setAttribute('transform',`translate(${x},${y})`); }
+  function updateVisibilityByMode(mode){ const show=mode==='doubles'; document.getElementById('A2').style.display=show?'':'none'; document.getElementById('B2').style.display=show?'':'none'; }
+  function renderPositions(){ ['A1','A2','B1','B2','S'].forEach(id=>{ const el=document.getElementById(id==='S'?'SHUTTLE':id); if(!el)return; if(state.mode==='singles'&&(id==='A2'||id==='B2')){el.style.display='none';return;} el.style.display=''; setPos(el,(state.positions[id]||defaults[state.mode][id]).x,(state.positions[id]||defaults[state.mode][id]).y); }); }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  // 記錄
+  recStartBtn.addEventListener('click',()=>{ steps=[];recordStartAt=Date.now();recording=true;startSnapshot={mode:state.mode,positions:clone(state.positions)}; recStartBtn.disabled=true;recStopBtn.disabled=false;playBtn.disabled=true; });
+  recStopBtn.addEventListener('click',()=>{ recording=false;recStartBtn.disabled=false;recStopBtn.disabled=true;playBtn.disabled=steps.length===0; });
+
+  // 回放
+  playBtn.addEventListener('click',()=>{
+    if(steps.length===0||isPlaying)return;
+    isPlaying=true; playOverlay.classList.add('playing'); recStartBtn.disabled=recStopBtn.disabled=true; modeSel.disabled=resetBtn.disabled=rotateBtn.disabled=true;
+    stopPlay=async()=>{isPlaying=false;playOverlay.classList.remove('playing');recStartBtn.disabled=false;recStopBtn.disabled=true;modeSel.disabled=resetBtn.disabled=rotateBtn.disabled=false;};
+    (async()=>{
+      if(startSnapshot){ state.mode=startSnapshot.mode; modeSel.value=startSnapshot.mode; updateVisibilityByMode(state.mode); state.positions=clone(startSnapshot.positions); renderPositions(true); }
+      for(const step of steps){ if(!isPlaying)break; if(state.mode!==step.mode){state.mode=step.mode;modeSel.value=step.mode;updateVisibilityByMode(state.mode);} const el=document.getElementById(step.role==='S'?'SHUTTLE':step.role); setPos(el,step.from.x,step.from.y); const dist=Math.hypot(step.to.x-step.from.x,step.to.y-step.from.y); const dur=Math.max(250,600*(dist/1800)); await animateMove(el,step.from,step.to,dur); state.positions[step.role]={...step.to}; } await stopPlay();})();
+  });
+  function animateMove(el,from,to,dur){ return new Promise(res=>{ const start=performance.now(); const tick=now=>{ const p=Math.min(1,(now-start)/dur); const e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2; setPos(el,from.x+(to.x-from.x)*e,from.y+(to.y-from.y)*e); if(p<1&&isPlaying)requestAnimationFrame(tick); else res(); }; requestAnimationFrame(tick); }); }
+  playOverlay.addEventListener('click',()=>{ if(isPlaying&&stopPlay) stopPlay(); });
+
+})();
 </script>
 </body>
 </html>
