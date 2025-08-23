@@ -2,24 +2,19 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>羽球戰術討論板</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>羽球戰術討論板（記錄 / 回放：先回到起始）</title>
 <style>
-  :root{
-    --bg:#0b1222; --panel:#0f1b33; --border:#23324d; --text:#e5e7eb;
-    --court-grass-1:#165a4a; --court-grass-2:#1e6f5c;
-    --net-band:#2a2945;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0}
+  :root{ --bg:#0b1222; --panel:#0f1b33; --border:#23324d; --text:#e5e7eb; --net-band:#2a2945; }
+  *{box-sizing:border-box} html,body{height:100%;margin:0}
   body{display:grid;grid-template-rows:auto 1fr;background:var(--bg);color:var(--text);
        font-family:system-ui,"Noto Sans TC",sans-serif;overflow:hidden;}
-  header{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 12px;
+  header{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;
          border-bottom:1px solid var(--border);background:#0b152a;z-index:2;}
   header h1{margin:0 6px 0 0;font-size:15px}
   select,button{background:var(--panel);border:1px solid var(--border);color:var(--text);
     border-radius:10px;padding:6px 10px;font-size:14px;cursor:pointer}
-  .legend{margin-left:auto;display:flex;align-items:center;gap:8px}
+  button[disabled]{opacity:.5;cursor:not-allowed}
   .wrap{position:relative;min-height:0;display:flex;justify-content:center;align-items:center;padding:8px;}
   .board{background:#07101f;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.45), inset 0 0 0 1px var(--border);
     display:flex;align-items:center;justify-content:center;position:relative;transition:transform .35s ease;}
@@ -28,25 +23,37 @@
         background:rgba(15,27,51,.6);padding:6px 8px;border:1px solid var(--border);border-radius:10px}
   .draggable{cursor:grab}
   .dragging{cursor:grabbing;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+  .overlay{position:absolute;inset:0;background:rgba(0,0,0,.1);display:none}
+  .overlay.playing{display:block}
+  .note{font-size:12px;opacity:.8;margin-left:auto}
 </style>
 </head>
 <body>
 <header id="topbar">
   <h1>羽球戰術討論板</h1>
+
   <label>模式：
     <select id="mode">
       <option value="singles">單打</option>
       <option value="doubles" selected>雙打</option>
     </select>
   </label>
-  <button id="resetBtn">重置位置</button>
-  <button id="rotateBtn">旋轉90°檢視</button>
-  <div class="legend">A隊(red.png) / B隊(blue.png)</div>
+
+  <button id="resetBtn"  title="重置位置">重置</button>
+  <button id="rotateBtn" title="旋轉90°檢視">旋轉90°</button>
+
+  <!-- 記錄 / 回放（已移除輸出功能） -->
+  <button id="recStartBtn">開始記錄</button>
+  <button id="recStopBtn"  disabled>結束記錄</button>
+  <button id="playBtn"     disabled>回放</button>
+
+  <span class="note">圖片：red.png / blue.png / shuttle.png 與此檔同資料夾</span>
 </header>
 
 <div class="wrap" id="wrap">
   <div class="board" id="board">
-    <svg id="court" viewBox="0 0 6500 13800">
+    <div class="overlay" id="playOverlay" title="播放中…"></div>
+    <svg id="court" viewBox="0 0 6500 13800" aria-label="Badminton Tactics Board">
       <defs>
         <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#165a4a"/><stop offset="100%" stop-color="#1e6f5c"/>
@@ -76,49 +83,70 @@
         <rect x="200" y="6760" width="6100" height="40" fill="#fff"/>
       </g>
 
-      <!-- A隊球員 red.png -->
+      <!-- A隊：red.png（800x800 置中） -->
       <g id="A1" class="draggable" data-role="A1" transform="translate(3250,10800)">
         <image x="-400" y="-400" width="800" height="800" preserveAspectRatio="xMidYMid meet"
-               href="red.png" xlink:href="red.png"/>
+               href="red.png" xlink:href="red.png" onerror="this.style.display='none';"/>
       </g>
       <g id="A2" class="draggable" data-role="A2" transform="translate(3250,9000)">
         <image x="-400" y="-400" width="800" height="800" preserveAspectRatio="xMidYMid meet"
-               href="red.png" xlink:href="red.png"/>
+               href="red.png" xlink:href="red.png" onerror="this.style.display='none';"/>
       </g>
 
-      <!-- B隊球員 blue.png -->
+      <!-- B隊：blue.png -->
       <g id="B1" class="draggable" data-role="B1" transform="translate(3250,4800)">
         <image x="-400" y="-400" width="800" height="800" preserveAspectRatio="xMidYMid meet"
-               href="blue.png" xlink:href="blue.png"/>
+               href="blue.png" xlink:href="blue.png" onerror="this.style.display='none';"/>
       </g>
       <g id="B2" class="draggable" data-role="B2" transform="translate(3250,3200)">
         <image x="-400" y="-400" width="800" height="800" preserveAspectRatio="xMidYMid meet"
-               href="blue.png" xlink:href="blue.png"/>
+               href="blue.png" xlink:href="blue.png" onerror="this.style.display='none';"/>
       </g>
 
-      <!-- 羽球 shuttle.png -->
+      <!-- 羽球：shuttle.png（900x900 置中） -->
       <g id="SHUTTLE" class="draggable" data-role="S" transform="translate(3250,6500)">
         <image x="-450" y="-450" width="900" height="900"
                preserveAspectRatio="xMidYMid meet"
-               href="shuttle.png" xlink:href="shuttle.png"/>
+               href="shuttle.png" xlink:href="shuttle.png" onerror="this.style.display='none';"/>
       </g>
     </svg>
 
-    <div class="hint">拖曳球員／羽球。單打只顯示 A1/B1；「旋轉90°」可橫向觀看。</div>
+    <div class="hint">開始記錄 → 拖曳 → 結束記錄 → 回放（會先回到記錄起始位置）</div>
   </div>
 </div>
 
 <script>
 (function(){
-  const board=document.getElementById('board');
-  const modeSel=document.getElementById('mode');
+  const board  = document.getElementById('board');
+  const topbar = document.getElementById('topbar');
+  const svg    = document.getElementById('court');
+  const modeSel= document.getElementById('mode');
   const resetBtn=document.getElementById('resetBtn');
   const rotateBtn=document.getElementById('rotateBtn');
-  const svg=document.getElementById('court');
 
-  // 拖曳範圍
+  const recStartBtn=document.getElementById('recStartBtn');
+  const recStopBtn =document.getElementById('recStopBtn');
+  const playBtn    =document.getElementById('playBtn');
+  const playOverlay=document.getElementById('playOverlay');
+
+  // 版面計算（避免遮住指令列）
+  function fitBoard(){
+    const availH = window.innerHeight - topbar.offsetHeight - 16;
+    const availW = document.documentElement.clientWidth - 16;
+    const hFromW = availW * (134/61);
+    const wFromH = availH * (61/134);
+    const finalH = Math.min(availH, hFromW);
+    const finalW = Math.min(availW, wFromH);
+    board.style.height = finalH + "px";
+    board.style.width  = finalW + "px";
+  }
+  window.addEventListener('resize', fitBoard);
+  window.addEventListener('orientationchange', ()=> setTimeout(fitBoard, 60));
+  fitBoard();
+
+  // 拖曳範圍 + 尺寸
   const BOUNDS={xMin:200,yMin:200,xMax:6300,yMax:13600};
-  const RAD={piece:400,shuttle:450}; // 放大後半徑
+  const RAD={piece:400, shuttle:450};
 
   const defaults={
     singles:{A1:{x:3250,y:10800},B1:{x:3250,y:3000},S:{x:3250,y:6500}},
@@ -126,38 +154,164 @@
   };
   let state={mode:'doubles',positions:clone(defaults.doubles),rotated:false};
 
+  // 記錄
+  let recording=false; let recordStartAt=0; let steps=[];
+  let startSnapshot=null; // {mode, positions}
+
+  // 初始化
   modeSel.value=state.mode;
   updateVisibilityByMode(state.mode);
   renderPositions();
 
-  resetBtn.addEventListener('click',()=>{state.positions=clone(defaults[state.mode]);renderPositions(true);});
-  rotateBtn.addEventListener('click',()=>{state.rotated=!state.rotated;board.style.transform=state.rotated?'rotate(90deg) scale(0.92)':'rotate(0deg) scale(1)';});
-  modeSel.addEventListener('change',e=>{
-    state.mode=e.target.value==='singles'?'singles':'doubles';
-    state.positions=clone(defaults[state.mode]);
-    updateVisibilityByMode(state.mode);renderPositions(true);
+  resetBtn.addEventListener('click',()=>{ state.positions=clone(defaults[state.mode]); renderPositions(true); });
+  rotateBtn.addEventListener('click',()=>{ state.rotated=!state.rotated; board.style.transform = state.rotated ? 'rotate(90deg) scale(0.92)' : 'rotate(0deg) scale(1)'; });
+
+  modeSel.addEventListener('change', e=>{
+    state.mode = e.target.value==='singles' ? 'singles' : 'doubles';
+    state.positions = clone(defaults[state.mode]);
+    updateVisibilityByMode(state.mode); renderPositions(true);
   });
 
-  const draggables=svg.querySelectorAll('.draggable');
+  // 拖曳
+  const draggables = svg.querySelectorAll('.draggable');
   draggables.forEach(makeDraggable);
 
   function makeDraggable(el){
     el.style.touchAction='none';
-    el.addEventListener('pointerdown',e=>{
-      e.preventDefault();el.setPointerCapture(e.pointerId);el.classList.add('dragging');
-      const role=el.dataset.role;const start=getPt(e);
-      const t=el.transform.baseVal.consolidate();const init=t?{x:t.matrix.e,y:t.matrix.f}:{x:0,y:0};
-      const move=ev=>{const p=getPt(ev);const nx=init.x+(p.x-start.x);const ny=init.y+(p.y-start.y);const c=clamp(nx,ny,role);state.positions[role]=c;setPos(el,c.x,c.y);};
-      const up=()=>{el.releasePointerCapture(e.pointerId);el.classList.remove('dragging');svg.removeEventListener('pointermove',move);};
-      svg.addEventListener('pointermove',move);svg.addEventListener('pointerup',up,{once:true});svg.addEventListener('pointercancel',up,{once:true});
+    el.addEventListener('pointerdown', (e)=>{
+      if(isPlaying) return;
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      el.classList.add('dragging');
+
+      const role = el.dataset.role;
+      const start = getPt(e);
+      const t = el.transform.baseVal.consolidate();
+      const init = t ? {x:t.matrix.e, y:t.matrix.f} : {x:0, y:0};
+
+      const move = (ev)=>{
+        const p = getPt(ev);
+        const nx = init.x + (p.x - start.x);
+        const ny = init.y + (p.y - start.y);
+        const c = clamp(nx, ny, role);
+        state.positions[role] = c;
+        setPos(el, c.x, c.y);
+      };
+      const up = ()=>{
+        el.releasePointerCapture(e.pointerId);
+        el.classList.remove('dragging');
+        svg.removeEventListener('pointermove', move);
+        svg.removeEventListener('pointerup', up);
+        svg.removeEventListener('pointercancel', up);
+
+        if(recording){
+          const to   = {...state.positions[role]};
+          const from = {...init};
+          steps.push({ t: Date.now()-recordStartAt, role, from, to, mode: state.mode });
+          playBtn.disabled = steps.length===0;
+        }
+      };
+      svg.addEventListener('pointermove', move);
+      svg.addEventListener('pointerup', up, { once:true });
+      svg.addEventListener('pointercancel', up, { once:true });
     });
   }
-  function getPt(e){const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;return pt.matrixTransform(svg.getScreenCTM().inverse());}
-  function clamp(x,y,role){const r=(role==='S')?RAD.shuttle:RAD.piece;return{x:Math.min(BOUNDS.xMax-r,Math.max(BOUNDS.xMin+r,x)),y:Math.min(BOUNDS.yMax-r,Math.max(BOUNDS.yMin+r,y))};}
-  function setPos(el,x,y){el.setAttribute('transform',`translate(${x},${y})`);}
-  function updateVisibilityByMode(mode){document.getElementById('A2').style.display=(mode==='doubles')?'':'none';document.getElementById('B2').style.display=(mode==='doubles')?'':'none';}
-  function renderPositions(){['A1','A2','B1','B2','S'].forEach(id=>{const el=document.getElementById(id==='S'?'SHUTTLE':id);if(!el)return;if(state.mode==='singles'&&(id==='A2'||id==='B2')){el.style.display='none';return;}el.style.display='';const p=state.positions[id]||defaults[state.mode][id];setPos(el,p.x,p.y);});}
-  function clone(o){return JSON.parse(JSON.stringify(o));}
+
+  function getPt(e){ const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+  function clamp(x,y,role){
+    const r=(role==='S')?RAD.shuttle:RAD.piece;
+    return { x:Math.min(BOUNDS.xMax-r,Math.max(BOUNDS.xMin+r,x)),
+             y:Math.min(BOUNDS.yMax-r,Math.max(BOUNDS.yMin+r,y)) };
+  }
+  function setPos(el,x,y){ el.setAttribute('transform',`translate(${x},${y})`); }
+  function updateVisibilityByMode(mode){
+    const showPair=(mode==='doubles');
+    document.getElementById('A2').style.display = showPair?'':'none';
+    document.getElementById('B2').style.display = showPair?'':'none';
+  }
+  function renderPositions(){
+    ['A1','A2','B1','B2','S'].forEach(id=>{
+      const el=document.getElementById(id==='S'?'SHUTTLE':id);
+      if(!el) return;
+      if(state.mode==='singles'&&(id==='A2'||id==='B2')){ el.style.display='none'; return; }
+      el.style.display='';
+      const p=state.positions[id]||defaults[state.mode][id];
+      setPos(el,p.x,p.y);
+    });
+  }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  // 記錄控制
+  recStartBtn.addEventListener('click', ()=>{
+    steps=[]; recordStartAt=Date.now(); recording=true;
+    // 重要：存起「開始記錄時」的模式與位置
+    startSnapshot = { mode: state.mode, positions: clone(state.positions) };
+    recStartBtn.disabled=true; recStopBtn.disabled=false; playBtn.disabled=true;
+  });
+  recStopBtn.addEventListener('click', ()=>{
+    recording=false;
+    recStartBtn.disabled=false; recStopBtn.disabled=true; playBtn.disabled = steps.length===0;
+  });
+
+  // 回放（先回到開始記錄時的位置 → 再播放）
+  let isPlaying=false, stopPlay=null;
+  playBtn.addEventListener('click', ()=>{
+    if(steps.length===0||isPlaying) return;
+    isPlaying=true; playOverlay.classList.add('playing');
+    recStartBtn.disabled=recStopBtn.disabled=true; modeSel.disabled=resetBtn.disabled=rotateBtn.disabled=true;
+
+    const queue=steps.slice();
+    const ease=(t)=> t<.5?2*t*t : 1-Math.pow(-2*t+2,2)/2;
+
+    const animateMove=(el,from,to,dur)=>new Promise(res=>{
+      const start=performance.now();
+      const tick=(now)=>{
+        const p=Math.min(1,(now-start)/dur); const e=ease(p);
+        setPos(el, from.x+(to.x-from.x)*e, from.y+(to.y-from.y)*e);
+        if(p<1 && isPlaying){ requestAnimationFrame(tick); } else { res(); }
+      };
+      requestAnimationFrame(tick);
+    });
+
+    stopPlay=async ()=>{
+      isPlaying=false; playOverlay.classList.remove('playing');
+      recStartBtn.disabled=false; recStopBtn.disabled=true; modeSel.disabled=resetBtn.disabled=rotateBtn.disabled=false;
+    };
+
+    (async()=>{
+      // ① 回到「開始記錄」那一刻的模式與位置（瞬間歸位）
+      if(startSnapshot){
+        state.mode = startSnapshot.mode;
+        modeSel.value = startSnapshot.mode;
+        updateVisibilityByMode(state.mode);
+        state.positions = clone(startSnapshot.positions);
+        renderPositions(true);
+        // 想要「平滑歸位」可改成：對每個角色呼叫 animateMove(元素, 目前, 起始, 400)
+      }
+
+      // ② 依序播放每一步
+      for(const step of queue){
+        if(!isPlaying) break;
+        if(state.mode!==step.mode){ state.mode=step.mode; modeSel.value=step.mode; updateVisibilityByMode(state.mode); }
+        const el=document.getElementById(step.role==='S'?'SHUTTLE':step.role);
+        const from = step.from; // 記錄時的起點
+        const to   = step.to;   // 記錄時的終點
+        // 若目前位置不是 from，先瞬間對齊（避免中途被移動造成偏差）
+        const curr = state.positions[step.role];
+        if(Math.hypot((curr.x||0)-from.x, (curr.y||0)-from.y) > 1){
+          setPos(el, from.x, from.y);
+          state.positions[step.role] = {...from};
+        }
+        const dist=Math.hypot(to.x-from.x, to.y-from.y);
+        const dur=Math.max(250, 600*(dist/1800));
+        await animateMove(el, from, to, dur);
+        state.positions[step.role]={...to};
+      }
+      await stopPlay();
+    })();
+  });
+  playOverlay.addEventListener('click', ()=>{ if(isPlaying&&stopPlay) stopPlay(); });
+
 })();
 </script>
 </body>
