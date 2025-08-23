@@ -5,279 +5,136 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>羽球戰術討論板</title>
 <style>
-  /* ===== 可愛粉彩主題 ===== */
-  :root{
-    --bg:#fff7fb; --bg-accent:#ffeef7; --panel:#ffffff; --panel-2:#fff5fb;
-    --ink:#54485f; --muted:#8a7b96; --primary:#fe7fbf; --primary-2:#ff9fd1; --primary-3:#ffb9de;
-    --green:#7bd6c5; --blue:#8ec6ff; --yellow:#ffd972;
-    --shadow:0 8px 24px rgba(255,127,191,.25);
-    --ring:0 0 0 3px rgba(255,127,191,.25);
-    --radius-xl:22px; --radius-lg:16px; --radius-md:12px;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0}
-  body{
-    display:grid;grid-template-rows:auto 1fr;background:
-      radial-gradient(1200px 700px at 10% -10%, #ffdbee 0%, transparent 60%),
-      radial-gradient(1000px 700px at 110% 10%, #e8f6ff 0%, transparent 55%),
-      var(--bg);
-    color:var(--ink);
-    font-family: ui-rounded, "SF Pro Rounded", system-ui, "Noto Sans TC", sans-serif;
-    overflow:hidden;
-  }
+  :root{ --bg:#0b1222; --panel:#0f1b33; --border:#23324d; --text:#e5e7eb; --net-band:#2a2945; }
+  *{box-sizing:border-box} html,body{height:100%;margin:0}
+  body{display:grid;grid-template-rows:auto 1fr;background:var(--bg);color:var(--text);
+       font-family:system-ui,"Noto Sans TC",sans-serif;overflow:hidden;}
+  header{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;
+         border-bottom:1px solid var(--border);background:#0b152a;z-index:2;}
+  header h1{margin:0 6px 0 0;font-size:15px}
+  select,button{background:var(--panel);border:1px solid var(--border);color:var(--text);
+    border-radius:10px;padding:6px 10px;font-size:14px;cursor:pointer}
+  button[disabled]{opacity:.5;cursor:not-allowed}
+  .wrap{position:relative;min-height:0;display:flex;justify-content:center;align-items:center;padding:8px;}
+  .board{background:#07101f;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.45), inset 0 0 0 1px var(--border);
+    display:flex;align-items:center;justify-content:center;position:relative;}
+  svg{width:96%;height:96%;display:block;touch-action:none}
+  .draggable{cursor:grab}
+  .dragging{cursor:grabbing;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+  .overlay{position:absolute;inset:0;background:rgba(0,0,0,.1);display:none}
+  .overlay.playing{display:block}
+  .copyright{position:absolute;right:10px;bottom:5px;font-size:12px;color:#aab8d6;opacity:.8;}
 
-  /* ===== 頂部工具列 ===== */
-  header{
-    position:sticky; top:0; z-index:3;
-    display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px;
-    padding:10px 14px;
-    background:linear-gradient(180deg,var(--bg-accent),rgba(255,255,255,.8));
-    backdrop-filter:saturate(1.2) blur(10px);
-    border-bottom:1px solid #f4e4ef;
-  }
-  .brand{
-    display:flex; align-items:center; gap:10px; padding:6px 10px;
-    background:var(--panel); border:1px solid #f3dbe9; border-radius:999px; box-shadow:var(--shadow);
-  }
-  .brand .logo{ width:26px;height:26px;border-radius:50%;
-    background: conic-gradient(from 0deg, var(--primary), var(--blue), var(--green), var(--primary));
-    box-shadow: inset 0 0 0 3px #fff, 0 6px 16px rgba(0,0,0,.08);
-  }
-  .brand h1{font-size:15px; margin:0; font-weight:700; letter-spacing:.4px}
-
-  .toolbar{
-    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-    background:var(--panel); border:1px solid #f3dbe9; border-radius:var(--radius-xl);
-    padding:8px; box-shadow:var(--shadow);
-  }
-
-  /* 膠囊切換：單/雙打 */
-  .pill{
-    display:flex; align-items:center; background:var(--panel-2);
-    border:1px solid #f6e5f1; border-radius:999px; padding:4px; gap:4px;
-  }
-  .pill input{ display:none; }
-  .pill label{
-    cursor:pointer; padding:8px 14px; border-radius:999px; font-size:13px;
-    color:var(--muted); transition:all .2s ease; user-select:none;
-  }
-  .pill input:checked + label{
-    color:#fff; background:linear-gradient(180deg,var(--primary),var(--primary-2));
-    box-shadow:var(--ring);
-  }
-  .sep{ width:1px; height:28px; background:#f1e3ef; margin:0 2px; }
-
-  /* ===== 軟糖按鈕 + 果凍彈跳 ===== */
-  .btn{
-    display:inline-flex; align-items:center; gap:8px;
-    padding:10px 14px; border-radius:14px; font-size:14px; font-weight:600;
-    border:1px solid #f0dbec; background:var(--panel);
-    color:var(--ink); cursor:pointer; transition:box-shadow .2s ease, background .2s;
-    box-shadow:var(--shadow); will-change:transform;
-  }
-  .btn:hover{ box-shadow: 0 10px 26px rgba(255,127,191,.32); }
-  .btn:active{ transform: translateY(1px); }
-  .btn.primary{
-    background:linear-gradient(180deg,var(--primary-2),var(--primary));
-    color:#fff; border-color:#ffb6da;
-  }
-  .btn.green{
-    background:linear-gradient(180deg,#9fe8d8,#61d4bd); color:#07453d; border-color:#b4efe2;
-  }
-  .btn.blue{
-    background:linear-gradient(180deg,#bfe0ff,#8ec6ff); color:#06304e; border-color:#cbe6ff;
-  }
-  .btn[disabled]{ opacity:.5; cursor:not-allowed; box-shadow:none; }
-
-  /* 觸發時的果凍動畫（彈一下） */
-  @keyframes jelly {
-    0%   { transform: scale3d(1,1,1); }
-    20%  { transform: scale3d(0.95,1.06,1); }
-    40%  { transform: scale3d(1.06,0.95,1); }
-    60%  { transform: scale3d(0.98,1.02,1); }
-    80%  { transform: scale3d(1.02,0.99,1); }
-    100% { transform: scale3d(1,1,1); }
-  }
-  .btn.jelly-bounce{ animation: jelly 420ms cubic-bezier(.2,.8,.2,1); }
-
-  /* 使用者偏好：降低動效時停用果凍動畫 */
-  @media (prefers-reduced-motion: reduce){
-    .btn.jelly-bounce{ animation:none; }
-    .btn:active{ transform:none; }
-  }
-
-  /* ===== 工作區 ===== */
-  .stage-wrap{ position:relative; min-height:0; padding:12px; }
-  .stage{
-    height:100%; width:100%; border-radius:24px; background:var(--panel);
-    border:1px dashed #f1e0ed; box-shadow:var(--shadow);
-    display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
-  }
-  .board{
-    background:linear-gradient(180deg,#fef6fb,#fff); border-radius:22px;
-    border:1px solid #f4e4ef; box-shadow: inset 0 0 0 1px #f8eff5;
-    display:flex; align-items:center; justify-content:center; position:relative;
-    transition: box-shadow .2s ease, transform .25s ease;
-  }
-  .board:focus-within{ box-shadow: 0 0 0 4px rgba(142,198,255,.2); }
-
-  svg{ width:96%; height:96%; display:block; touch-action:none }
-  .draggable{ cursor:grab }
-  .dragging{ cursor:grabbing; filter:drop-shadow(0 8px 14px rgba(0,0,0,.18)); }
-
-  .overlay{ position:absolute; inset:0; background:rgba(255,182,213,.12); display:none }
-  .overlay.playing{ display:block; animation: pulse 1.1s ease-in-out infinite alternate; }
-  @keyframes pulse{ from{background:rgba(255,182,213,.10)} to{background:rgba(255,182,213,.18)} }
-
-  .copyright{
-    position:absolute; right:12px; bottom:8px; font-size:12px; color:#9b8aa9; opacity:.85;
-    background:rgba(255,255,255,.7); border:1px solid #efdeea; padding:4px 10px; border-radius:999px;
-    backdrop-filter: blur(4px);
-  }
-
-  /* 旋轉狀態下讓 icon 反向旋轉，避免頭下腳上 */
+  /* 圖示：在自身中心為旋轉原點；rot-on 狀態下反向旋轉 -90° */
   .icon{ transform-box: fill-box; transform-origin: center; }
-  .rot-on .icon{ transform: rotate(-90deg); }
+  .rot-on .icon{ transform: rotate(-90deg); } /* <-- 反向旋轉，讓頭永遠向上 */
 </style>
 </head>
 <body>
-  <!-- ===== Header：品牌 + 工具列 ===== -->
-  <header id="topbar">
-    <div class="brand">
-      <div class="logo" aria-hidden="true"></div>
-      <h1>羽球戰術討論板</h1>
-    </div>
+<header id="topbar">
+  <h1>羽球戰術討論板</h1>
 
-    <div class="toolbar" role="group" aria-label="模式與操作">
-      <!-- 膠囊切換 單/雙打 -->
-      <div class="pill" role="tablist" aria-label="比賽模式">
-        <input type="radio" id="md-s" name="mode" value="singles">
-        <label for="md-s">🏃‍♂️ 單打</label>
-        <input type="radio" id="md-d" name="mode" value="doubles" checked>
-        <label for="md-d">👫 雙打</label>
-      </div>
+  <label>模式：
+    <select id="mode">
+      <option value="singles">單打</option>
+      <option value="doubles" selected>雙打</option>
+    </select>
+  </label>
 
-      <span class="sep"></span>
+  <button id="resetBtn"  title="重置位置">重置</button>
+  <button id="rotateBtn" title="旋轉90°檢視">旋轉90°</button>
 
-      <button id="resetBtn" class="btn" title="重置位置">🔄 重置</button>
-      <button id="rotateBtn" class="btn blue" title="旋轉 90° 檢視">🌀 旋轉90°</button>
+  <button id="recStartBtn">開始記錄</button>
+  <button id="recStopBtn"  disabled>結束記錄</button>
+  <button id="playBtn"     disabled>回放</button>
+</header>
 
-      <span class="sep"></span>
+<div class="wrap" id="wrap">
+  <div class="board" id="board">
+    <div class="overlay" id="playOverlay" title="播放中…"></div>
 
-      <button id="recStartBtn" class="btn primary">⏺️ 開始記錄</button>
-      <button id="recStopBtn"  class="btn" disabled>⏹️ 結束記錄</button>
-      <button id="playBtn"     class="btn green" disabled>▶️ 回放</button>
-    </div>
-  </header>
+    <!-- 旋轉時只旋轉 #world；同時切換 viewBox 比例避免裁切 -->
+    <svg id="court" viewBox="0 0 6500 13800" aria-label="Badminton Tactics Board" preserveAspectRatio="xMidYMid meet">
+      <g id="world" transform="">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#165a4a"/><stop offset="100%" stop-color="#1e6f5c"/>
+          </linearGradient>
+          <pattern id="netgrid" width="140" height="140" patternUnits="userSpaceOnUse">
+            <path d="M0 0H140M0 0V140" stroke="#e5e7eb" stroke-opacity=".55" stroke-width="10"/>
+          </pattern>
+        </defs>
 
-  <!-- ===== 工作區 ===== -->
-  <div class="stage-wrap">
-    <div class="stage">
-      <div class="board" id="board" tabindex="-1" aria-label="戰術板">
-        <div class="overlay" id="playOverlay" title="播放中…"></div>
+        <!-- 場地 -->
+        <rect x="200" y="200" width="6100" height="13400" rx="20" fill="url(#g)"/>
+        <g stroke="#ffffff" stroke-width="60" fill="none">
+          <rect x="200" y="200" width="6100" height="13400"/>
+          <rect x="660" y="200" width="5180" height="13400"/>
+          <line x1="200" y1="4920" x2="6300" y2="4920"/>
+          <line x1="200" y1="8880" x2="6300" y2="8880"/>
+          <line x1="200" y1="960"  x2="6300" y2="960"/>
+          <line x1="200" y1="12840" x2="6300" y2="12840"/>
+          <line x1="3250" y1="200"  x2="3250" y2="4920"/>
+          <line x1="3250" y1="8880" x2="3250" y2="13600"/>
+        </g>
 
-        <!-- 旋轉時只轉 world，並切換 viewBox（直↔橫） -->
-        <svg id="court" viewBox="0 0 6500 13800" aria-label="Badminton Court" preserveAspectRatio="xMidYMid meet">
-          <g id="world" transform="">
-            <defs>
-              <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#aaf0e3"/><stop offset="100%" stop-color="#7bd6c5"/>
-              </linearGradient>
-              <pattern id="netgrid" width="140" height="140" patternUnits="userSpaceOnUse">
-                <path d="M0 0H140M0 0V140" stroke="#ffffff" stroke-opacity=".7" stroke-width="10"/>
-              </pattern>
-            </defs>
+        <!-- 網帶 -->
+        <g id="net">
+          <rect x="200" y="6770" width="6100" height="260" fill="#2a2945" opacity="0.9"/>
+          <rect x="200" y="6770" width="6100" height="260" fill="url(#netgrid)" opacity="0.9"/>
+          <rect x="200" y="6760" width="6100" height="40" fill="#fff"/>
+        </g>
 
-            <!-- 場地 -->
-            <rect x="200" y="200" width="6100" height="13400" rx="28" fill="url(#g)" />
-            <g stroke="#ffffff" stroke-opacity=".96" stroke-width="60" fill="none">
-              <rect x="200" y="200" width="6100" height="13400" rx="28"/>
-              <rect x="660" y="200" width="5180" height="13400" rx="16"/>
-              <line x1="200" y1="4920" x2="6300" y2="4920"/>
-              <line x1="200" y1="8880" x2="6300" y2="8880"/>
-              <line x1="200" y1="960"  x2="6300" y2="960"/>
-              <line x1="200" y1="12840" x2="6300" y2="12840"/>
-              <line x1="3250" y1="200"  x2="3250" y2="4920"/>
-              <line x1="3250" y1="8880" x2="3250" y2="13600"/>
-            </g>
+        <!-- A隊（圖示 900×900，包 .icon 以便局部旋轉） -->
+        <g id="A1" class="draggable" data-role="A1" transform="translate(3250,10800)">
+          <g class="icon"><image x="-450" y="-450" width="900" height="900" href="red.png" xlink:href="red.png"/></g>
+        </g>
+        <g id="A2" class="draggable" data-role="A2" transform="translate(3250,9000)">
+          <g class="icon"><image x="-450" y="-450" width="900" height="900" href="red.png" xlink:href="red.png"/></g>
+        </g>
 
-            <!-- 網帶 -->
-            <g id="net">
-              <rect x="200" y="6770" width="6100" height="260" fill="#ffedf7" opacity="1"/>
-              <rect x="200" y="6770" width="6100" height="260" fill="url(#netgrid)" opacity=".9"/>
-              <rect x="200" y="6760" width="6100" height="40" fill="#fff"/>
-            </g>
+        <!-- B隊（圖示 900×900） -->
+        <g id="B1" class="draggable" data-role="B1" transform="translate(3250,4800)">
+          <g class="icon"><image x="-450" y="-450" width="900" height="900" href="blue.png" xlink:href="blue.png"/></g>
+        </g>
+        <g id="B2" class="draggable" data-role="B2" transform="translate(3250,3200)">
+          <g class="icon"><image x="-450" y="-450" width="900" height="900" href="blue.png" xlink:href="blue.png"/></g>
+        </g>
 
-            <!-- A隊 -->
-            <g id="A1" class="draggable" data-role="A1" transform="translate(3250,10800)">
-              <g class="icon"><image x="-450" y="-450" width="900" height="900" href="red.png" xlink:href="red.png"/></g>
-            </g>
-            <g id="A2" class="draggable" data-role="A2" transform="translate(3250,9000)">
-              <g class="icon"><image x="-450" y="-450" width="900" height="900" href="red.png" xlink:href="red.png"/></g>
-            </g>
+        <!-- 羽球（1000×1000，同樣包 .icon） -->
+        <g id="SHUTTLE" class="draggable" data-role="S" transform="translate(3250,6500)">
+          <g class="icon"><image x="-500" y="-500" width="1000" height="1000" href="shuttle.png" xlink:href="shuttle.png"/></g>
+        </g>
+      </g>
+    </svg>
 
-            <!-- B隊 -->
-            <g id="B1" class="draggable" data-role="B1" transform="translate(3250,4800)">
-              <g class="icon"><image x="-450" y="-450" width="900" height="900" href="blue.png" xlink:href="blue.png"/></g>
-            </g>
-            <g id="B2" class="draggable" data-role="B2" transform="translate(3250,3200)">
-              <g class="icon"><image x="-450" y="-450" width="900" height="900" href="blue.png" xlink:href="blue.png"/></g>
-            </g>
-
-            <!-- 羽球 -->
-            <g id="SHUTTLE" class="draggable" data-role="S" transform="translate(3250,6500)">
-              <g class="icon"><image x="-500" y="-500" width="1000" height="1000" href="shuttle.png" xlink:href="shuttle.png"/></g>
-            </g>
-          </g>
-        </svg>
-
-        <div class="copyright">Design by Kunta</div>
-      </div>
-    </div>
+    <div class="copyright">Design by Kunta</div>
   </div>
+</div>
 
 <script>
 (function(){
-  const VB_W=6500, VB_H=13800;
-  const topbar=document.getElementById('topbar');
-  const board =document.getElementById('board');
-  const svg   =document.getElementById('court');
-  const world =document.getElementById('world');
-  const playOverlay=document.getElementById('playOverlay');
-
-  // 模式切換（膠囊）
-  const modeSingles=document.getElementById('md-s');
-  const modeDoubles=document.getElementById('md-d');
-
-  const resetBtn   =document.getElementById('resetBtn');
-  const rotateBtn  =document.getElementById('rotateBtn');
+  const VB_W = 6500, VB_H = 13800; // 直式 viewBox
+  const board  = document.getElementById('board');
+  const topbar = document.getElementById('topbar');
+  const svg    = document.getElementById('court');
+  const world  = document.getElementById('world');
+  const modeSel= document.getElementById('mode');
+  const resetBtn=document.getElementById('resetBtn');
+  const rotateBtn=document.getElementById('rotateBtn');
   const recStartBtn=document.getElementById('recStartBtn');
   const recStopBtn =document.getElementById('recStopBtn');
   const playBtn    =document.getElementById('playBtn');
+  const playOverlay=document.getElementById('playOverlay');
 
-  // 讓所有 .btn 都有果凍彈跳（用 JS 加 class，避免 hover 也觸發）
-  const buttons = document.querySelectorAll('.btn');
-  buttons.forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      if(btn.disabled) return;
-      btn.classList.remove('jelly-bounce'); // 重新觸發
-      // 強制重繪以重置動畫（reflow）
-      // eslint-disable-next-line no-unused-expressions
-      void btn.offsetWidth;
-      btn.classList.add('jelly-bounce');
-    });
-    // 保險：動畫結束移除 class
-    btn.addEventListener('animationend', ()=> btn.classList.remove('jelly-bounce'));
-  });
-
-  // 自適應大小：依目前 viewBox 比例
+  // 依目前 viewBox 比例自適應
   function fitBoard(){
-    const vb=svg.viewBox.baseVal;
-    const ratio=vb.height/vb.width;
-    const availH=window.innerHeight - topbar.offsetHeight - 20;
-    const availW=document.documentElement.clientWidth - 24;
-    const hFromW=availW * ratio;
-    const wFromH=availH / ratio;
+    const vb = svg.viewBox.baseVal;
+    const ratio = vb.height / vb.width; // H/W
+    const availH = window.innerHeight - topbar.offsetHeight - 16;
+    const availW = document.documentElement.clientWidth - 16;
+    const hFromW = availW * ratio;
+    const wFromH = availH / ratio;
     board.style.height = Math.min(availH, hFromW) + "px";
     board.style.width  = Math.min(availW, wFromH) + "px";
   }
@@ -287,7 +144,7 @@
 
   // 狀態
   const BOUNDS={xMin:200,yMin:200,xMax:6300,yMax:13600};
-  const RAD={piece:450, shuttle:500};
+  const RAD   ={piece:450, shuttle:500};
   const defaults={
     singles:{A1:{x:3250,y:10800},B1:{x:3250,y:3000},S:{x:3250,y:6500}},
     doubles:{A1:{x:3250,y:10800},A2:{x:3250,y:9000},B1:{x:3250,y:4800},B2:{x:3250,y:3200},S:{x:3250,y:6500}}
@@ -296,105 +153,91 @@
   let recording=false, steps=[], startSnapshot=null;
   let isPlaying=false;
 
-  // 初始化
-  modeDoubles.checked=true;
-  renderMode(state.mode);
-  renderPositions();
+  modeSel.value=state.mode; updateVisibilityByMode(state.mode); renderPositions();
 
-  // 模式切換
-  modeSingles.addEventListener('change', ()=>{ if(modeSingles.checked) setMode('singles'); });
-  modeDoubles.addEventListener('change', ()=>{ if(modeDoubles.checked) setMode('doubles'); });
-  function setMode(m){
-    state.mode = m==='singles'?'singles':'doubles';
-    state.positions = clone(defaults[state.mode]);
-    renderMode(state.mode);
-    renderPositions(true);
-  }
-  function renderMode(m){
-    const showPair = (m==='doubles');
-    document.getElementById('A2').style.display = showPair?'':'none';
-    document.getElementById('B2').style.display = showPair?'':'none';
-  }
+  resetBtn.addEventListener('click',()=>{ state.positions=clone(defaults[state.mode]); renderPositions(true); });
 
-  // 重置
-  resetBtn.addEventListener('click', ()=>{
-    state.positions = clone(defaults[state.mode]);
-    renderPositions(true);
-    flash(resetBtn);
-  });
-
-  // 旋轉 90°（切 viewBox；icon 反向旋轉保持正向）
-  rotateBtn.addEventListener('click', ()=>{
+  // 旋轉：切換 viewBox / world 旋轉；並「反向」旋轉 icon 讓頭向上
+  rotateBtn.addEventListener('click',()=>{
     state.rotated = !state.rotated;
     if(state.rotated){
-      svg.setAttribute('viewBox', `0 0 ${VB_H} ${VB_W}`);
-      world.setAttribute('transform', `translate(${VB_H} 0) rotate(90)`);
-      document.documentElement.classList.add('rot-on');
+      svg.setAttribute('viewBox', `0 0 ${VB_H} ${VB_W}`);                 // 橫式
+      world.setAttribute('transform', `translate(${VB_H} 0) rotate(90)`); // 場地轉 90°
+      document.documentElement.classList.add('rot-on');                   // CSS: icon 轉 -90°
+      setIconsRotation(-90);                                             // JS 雙保險
     }else{
-      svg.setAttribute('viewBox', `0 0 ${VB_W} ${VB_H}`);
+      svg.setAttribute('viewBox', `0 0 ${VB_W} ${VB_H}`);                 // 直式
       world.setAttribute('transform', ``);
       document.documentElement.classList.remove('rot-on');
+      setIconsRotation(0);
     }
     fitBoard();
-    flash(rotateBtn);
   });
 
-  // 拖曳
-  const svgEls = svg.querySelectorAll('.draggable');
-  svgEls.forEach(makeDraggable);
+  // 直接對每個 .icon 設 SVG transform（避免少數環境 CSS 不生效）
+  function setIconsRotation(deg){
+    const icons = svg.querySelectorAll('.icon');
+    icons.forEach(ic => ic.setAttribute('transform', deg ? `rotate(${deg})` : ''));
+  }
+
+  modeSel.addEventListener('change', e=>{
+    state.mode=e.target.value==='singles'?'singles':'doubles';
+    state.positions=clone(defaults[state.mode]);
+    updateVisibilityByMode(state.mode); renderPositions(true);
+  });
+
+  // 拖曳（用 world 的 CTM 轉回邏輯座標，旋轉後方向仍正確）
+  const draggables=svg.querySelectorAll('.draggable');
+  draggables.forEach(makeDraggable);
   function makeDraggable(el){
     el.style.touchAction='none';
-    el.addEventListener('pointerdown', (e)=>{
+    el.addEventListener('pointerdown', e=>{
       if(isPlaying) return;
       e.preventDefault();
-      el.setPointerCapture(e.pointerId);
-      el.classList.add('dragging');
-
-      const role = el.dataset.role;
-      const start = getPt(e);
-      const t = el.transform.baseVal.consolidate();
-      const init = t ? {x:t.matrix.e, y:t.matrix.f} : {x:0, y:0};
-
-      const move = (ev)=>{
+      el.setPointerCapture(e.pointerId); el.classList.add('dragging');
+      const role=el.dataset.role;
+      const start=getPt(e);
+      const t=el.transform.baseVal.consolidate();
+      const init=t?{x:t.matrix.e,y:t.matrix.f}:{x:0,y:0};
+      const move=ev=>{
         const p=getPt(ev);
-        const nx=init.x + (p.x - start.x);
-        const ny=init.y + (p.y - start.y);
+        const nx=init.x+(p.x-start.x), ny=init.y+(p.y-start.y);
         const c=clamp(nx,ny,role);
-        state.positions[role]=c;
-        setPos(el,c.x,c.y);
+        state.positions[role]=c; setPos(el,c.x,c.y);
       };
-      const up = ()=>{
-        el.releasePointerCapture(e.pointerId);
-        el.classList.remove('dragging');
-        svg.removeEventListener('pointermove', move);
-        svg.removeEventListener('pointerup', up);
-        svg.removeEventListener('pointercancel', up);
-
+      const up=()=>{
+        el.releasePointerCapture(e.pointerId); el.classList.remove('dragging');
+        svg.removeEventListener('pointermove',move);
+        svg.removeEventListener('pointerup',up);
+        svg.removeEventListener('pointercancel',up);
         if(recording){
           steps.push({ role, from:{...init}, to:{...state.positions[role]}, mode: state.mode });
-          playBtn.disabled = steps.length===0;
+          playBtn.disabled=steps.length===0;
         }
       };
-
-      svg.addEventListener('pointermove', move);
-      svg.addEventListener('pointerup', up, { once:true });
-      svg.addEventListener('pointercancel', up, { once:true });
+      svg.addEventListener('pointermove',move);
+      svg.addEventListener('pointerup',up,{once:true});
+      svg.addEventListener('pointercancel',up,{once:true});
     });
   }
 
   function getPt(e){
-    const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
-    const m = world.getScreenCTM().inverse();
+    const pt=svg.createSVGPoint();
+    pt.x=e.clientX; pt.y=e.clientY;
+    const m = world.getScreenCTM().inverse(); // 包含旋轉/平移
     return pt.matrixTransform(m);
   }
   function clamp(x,y,role){
     const r=(role==='S')?RAD.shuttle:RAD.piece;
-    return {
-      x: Math.min(BOUNDS.xMax - r, Math.max(BOUNDS.xMin + r, x)),
-      y: Math.min(BOUNDS.yMax - r, Math.max(BOUNDS.yMin + r, y))
-    };
+    return { x: Math.min(BOUNDS.xMax - r, Math.max(BOUNDS.xMin + r, x)),
+             y: Math.min(BOUNDS.yMax - r, Math.max(BOUNDS.yMin + r, y)) };
   }
   function setPos(el,x,y){ el.setAttribute('transform',`translate(${x},${y})`); }
+  function updateVisibilityByMode(mode){
+    const show=mode==='doubles';
+    document.getElementById('A2').style.display=show?'':'none';
+    document.getElementById('B2').style.display=show?'':'none';
+  }
   function renderPositions(){
     ['A1','A2','B1','B2','S'].forEach(id=>{
       const el=document.getElementById(id==='S'?'SHUTTLE':id);
@@ -407,25 +250,21 @@
   }
   function clone(o){ return JSON.parse(JSON.stringify(o)); }
 
-  // ===== 記錄 / 回放（回放先回到開始記錄的站位）=====
-  recStartBtn.addEventListener('click', ()=>{
+  // 記錄 / 回放（回放先回到開始記錄的站位）
+  recStartBtn.addEventListener('click',()=>{
     steps=[]; recording=true;
     startSnapshot={ mode: state.mode, positions: clone(state.positions) };
     recStartBtn.disabled=true; recStopBtn.disabled=false; playBtn.disabled=true;
-    flash(recStartBtn);
   });
-  recStopBtn.addEventListener('click', ()=>{
+  recStopBtn.addEventListener('click',()=>{
     recording=false;
     recStartBtn.disabled=false; recStopBtn.disabled=true; playBtn.disabled=steps.length===0;
-    flash(recStopBtn);
   });
 
-  playBtn.addEventListener('click', ()=>{
+  playBtn.addEventListener('click',()=>{
     if(steps.length===0||isPlaying) return;
     isPlaying=true; playOverlay.classList.add('playing');
-    recStartBtn.disabled=recStopBtn.disabled=true;
-    modeSingles.disabled=modeDoubles.disabled=true;
-    resetBtn.disabled=rotateBtn.disabled=true;
+    recStartBtn.disabled=recStopBtn.disabled=true; modeSel.disabled=resetBtn.disabled=rotateBtn.disabled=true;
 
     const ease=(t)=> t<.5?2*t*t : 1-Math.pow(-2*t+2,2)/2;
     function animateMove(el,from,to,dur){ return new Promise(res=>{
@@ -439,23 +278,17 @@
     });}
 
     (async()=>{
-      // 歸位到記錄起始
       if(startSnapshot){
         state.mode=startSnapshot.mode;
-        modeSingles.checked = (state.mode==='singles');
-        modeDoubles.checked = (state.mode==='doubles');
-        renderMode(state.mode);
+        modeSel.value=startSnapshot.mode;
+        updateVisibilityByMode(state.mode);
         state.positions=clone(startSnapshot.positions);
         renderPositions(true);
       }
-      // 播放步驟
       for(const step of steps){
         if(!isPlaying) break;
         if(state.mode!==step.mode){
-          state.mode=step.mode;
-          modeSingles.checked = (state.mode==='singles');
-          modeDoubles.checked = (state.mode==='doubles');
-          renderMode(state.mode);
+          state.mode=step.mode; modeSel.value=step.mode; updateVisibilityByMode(state.mode);
         }
         const el=document.getElementById(step.role==='S'?'SHUTTLE':step.role);
         setPos(el, step.from.x, step.from.y);
@@ -465,18 +298,11 @@
         state.positions[step.role]={...step.to};
       }
       isPlaying=false; playOverlay.classList.remove('playing');
-      recStartBtn.disabled=false; recStopBtn.disabled=true;
-      modeSingles.disabled=modeDoubles.disabled=false;
-      resetBtn.disabled=rotateBtn.disabled=false;
-      flash(playBtn);
+      recStartBtn.disabled=false; recStopBtn.disabled=true; modeSel.disabled=resetBtn.disabled=rotateBtn.disabled=false;
     })();
   });
+  playOverlay.addEventListener('click',()=>{ if(isPlaying){ isPlaying=false; } });
 
-  // 小小動效（按鈕/板子亮一下）
-  function flash(el){
-    el.animate([{boxShadow:'var(--shadow)'},{boxShadow:'0 0 0 6px rgba(255,127,191,.25)'}],
-               {duration:220, direction:'alternate', iterations:2});
-  }
 })();
 </script>
 </body>
