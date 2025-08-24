@@ -9,16 +9,15 @@
   :root{
     --bg:#fff7fb; --bg-accent:#ffeef7; --panel:#ffffff; --panel-2:#fff5fb;
     --ink:#54485f; --muted:#8a7b96; --primary:#fe7fbf; --primary-2:#ff9fd1; --primary-3:#ffb9de;
-    --green:#7bd6c5; --blue:#8ec6ff; --yellow:#ffd972;
+    --green:#7bd6c5; --blue:#8ec6ff; --yellow:#ffd972; --purple:#bfa9ff;
     --shadow:0 8px 24px rgba(255,127,191,.25);
     --ring:0 0 0 3px rgba(255,127,191,.25);
-    --radius-xl:22px; --radius-lg:16px; --radius-md:12px;
-    --net-band:#8b6fb2; /* 深一點的網帶顏色 */
+    --net-band:#8b6fb2;
   }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0}
   body{
-    display:grid;grid-template-rows:auto 1fr;background:
+    display:grid;grid-template-rows:auto auto 1fr;background:
       radial-gradient(1200px 700px at 10% -10%, #ffdbee 0%, transparent 60%),
       radial-gradient(1000px 700px at 110% 10%, #e8f6ff 0%, transparent 55%),
       var(--bg);
@@ -29,10 +28,10 @@
 
   /* ===== 頂部工具列 ===== */
   header{
-    position:sticky; top:0; z-index:3;
+    position:sticky; top:0; z-index:5;
     display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px;
     padding:10px 14px;
-    background:linear-gradient(180deg,var(--bg-accent),rgba(255,255,255,.8));
+    background:linear-gradient(180deg,var(--bg-accent),rgba(255,255,255,.85));
     backdrop-filter:saturate(1.2) blur(10px);
     border-bottom:1px solid #f4e4ef;
   }
@@ -48,7 +47,7 @@
 
   .toolbar{
     display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-    background:var(--panel); border:1px solid #f3dbe9; border-radius:var(--radius-xl);
+    background:var(--panel); border:1px solid #f3dbe9; border-radius:22px;
     padding:8px; box-shadow:var(--shadow);
   }
 
@@ -74,26 +73,17 @@
     padding:10px 14px; border-radius:14px; font-size:14px; font-weight:600;
     border:1px solid #f0dbec; background:var(--panel);
     color:var(--ink); cursor:pointer; transition:box-shadow .2s ease, background .2s;
-    box-shadow:var(--shadow); will-change:transform;
+    box-shadow:var(--shadow); will-change:transform; user-select:none;
   }
   .btn:hover{ box-shadow: 0 10px 26px rgba(255,127,191,.32); }
   .btn:active{ transform: translateY(1px); }
-  .btn.primary{
-    background:linear-gradient(180deg,var(--primary-2),var(--primary));
-    color:#fff; border-color:#ffb6da;
-  }
-  .btn.green{
-    background:linear-gradient(180deg,#9fe8d8,#61d4bd); color:#07453d; border-color:#b4efe2;
-  }
-  .btn.blue{
-    background:linear-gradient(180deg,#bfe0ff,#8ec6ff); color:#06304e; border-color:#cbe6ff;
-  }
-  .btn.purple{
-    background:linear-gradient(180deg,#d8c6ff,#bfa9ff); color:#3f2b75; border-color:#e6d9ff;
-  }
+  .btn.primary{ background:linear-gradient(180deg,var(--primary-2),var(--primary)); color:#fff; border-color:#ffb6da; }
+  .btn.green  { background:linear-gradient(180deg,#9fe8d8,#61d4bd); color:#07453d; border-color:#b4efe2; }
+  .btn.blue   { background:linear-gradient(180deg,#bfe0ff,#8ec6ff); color:#06304e; border-color:#cbe6ff; }
+  .btn.purple { background:linear-gradient(180deg,#d8c6ff,#bfa9ff); color:#3f2b75; border-color:#e6d9ff; }
   .btn[disabled]{ opacity:.5; cursor:not-allowed; box-shadow:none; }
 
-  /* 觸發時的果凍動畫（按鈕/棋子共用） */
+  /* 觸發時的果凍動畫（按鈕/棋子/進度滑桿拇指共用） */
   @keyframes jelly {
     0%   { transform: scale3d(1,1,1); }
     20%  { transform: scale3d(0.95,1.06,1); }
@@ -103,10 +93,37 @@
     100% { transform: scale3d(1,1,1); }
   }
   .jelly-bounce{ animation: jelly 420ms cubic-bezier(.2,.8,.2,1); }
-
   @media (prefers-reduced-motion: reduce){
     .jelly-bounce{ animation:none; }
     .btn:active{ transform:none; }
+  }
+
+  /* ===== 第二列：回放控制列（進度條） ===== */
+  .playerbar{
+    display:flex; align-items:center; gap:10px; padding:8px 14px;
+    background:linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.72));
+    border-bottom:1px solid #f4e4ef;
+    position:sticky; top:58px; z-index:4;
+  }
+  .playerbar .label{ font-size:13px; color:#6c5c7a; min-width:54px; }
+  .time{ font-variant-numeric: tabular-nums; font-size:12px; color:#8a7b96; min-width:76px; text-align:center; }
+  .range{
+    flex:1; display:flex; align-items:center; gap:8px;
+    padding:8px 10px; border-radius:14px; background:#fff; border:1px solid #f0dbec; box-shadow:var(--shadow);
+  }
+  input[type="range"]{
+    -webkit-appearance:none; appearance:none; width:100%; height:10px; border-radius:999px;
+    background: linear-gradient(90deg, var(--primary) var(--p,0%), #eee var(--p,0%));
+    outline:none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%;
+    background: radial-gradient(circle at 30% 30%, #fff 0 40%, var(--primary) 41% 100%);
+    border:2px solid #ffd1ea; box-shadow:0 2px 8px rgba(254,127,191,.35);
+    cursor:pointer; transition:transform .1s ease;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:18px; height:18px; border-radius:50%; background:#fff; border:2px solid #ffd1ea; cursor:pointer;
   }
 
   /* ===== 工作區 ===== */
@@ -120,10 +137,7 @@
     background:linear-gradient(180deg,#fef6fb,#fff); border-radius:22px;
     border:1px solid #f4e4ef; box-shadow: inset 0 0 0 1px #f8eff5;
     display:flex; align-items:center; justify-content:center; position:relative;
-    transition: box-shadow .2s ease, transform .25s ease;
   }
-  .board:focus-within{ box-shadow: 0 0 0 4px rgba(142,198,255,.2); }
-
   svg{ width:96%; height:96%; display:block; touch-action:none }
   .draggable{ cursor:grab }
   .dragging{ cursor:grabbing; filter:drop-shadow(0 8px 14px rgba(0,0,0,.18)); }
@@ -171,8 +185,20 @@
       <button id="recStartBtn" class="btn primary">⏺️ 開始記錄</button>
       <button id="recStopBtn"  class="btn" disabled>⏹️ 結束記錄</button>
       <button id="playBtn"     class="btn green" disabled>▶️ 回放</button>
+      <button id="pauseBtn"    class="btn" disabled>⏸️ 暫停</button>
+      <button id="stopBtn"     class="btn" disabled>⏹️ 停止</button>
     </div>
   </header>
+
+  <!-- ===== Player bar：回放進度條 ===== -->
+  <div class="playerbar">
+    <div class="label">回放</div>
+    <div class="range" style="flex:1">
+      <span class="time" id="curTime">00:00.0</span>
+      <input id="progress" type="range" min="0" value="0" step="1" />
+      <span class="time" id="totTime">00:00.0</span>
+    </div>
+  </div>
 
   <!-- ===== 工作區 ===== -->
   <div class="stage-wrap">
@@ -205,7 +231,7 @@
               <line x1="3250" y1="8880" x2="3250" y2="13600"/>
             </g>
 
-            <!-- 網帶（加深顏色 + 一點陰影） -->
+            <!-- 網帶（加深） -->
             <g id="net">
               <rect x="200" y="6770" width="6100" height="260" fill="var(--net-band)" opacity="1"/>
               <rect x="200" y="6770" width="6100" height="260" fill="url(#netgrid)" opacity=".75"/>
@@ -260,14 +286,17 @@
   const recStartBtn=document.getElementById('recStartBtn');
   const recStopBtn =document.getElementById('recStopBtn');
   const playBtn    =document.getElementById('playBtn');
+  const pauseBtn   =document.getElementById('pauseBtn');
+  const stopBtn    =document.getElementById('stopBtn');
 
-  // 讓所有 .btn 都有果凍彈跳（按鈕本身）
-  const buttons = document.querySelectorAll('.btn');
-  buttons.forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      if(btn.disabled) return;
-      triggerJelly(btn);
-    });
+  // 進度列
+  const progress   =document.getElementById('progress');
+  const curTimeEl  =document.getElementById('curTime');
+  const totTimeEl  =document.getElementById('totTime');
+
+  // 按鈕果凍動畫（click）
+  document.querySelectorAll('.btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ if(btn.disabled) return; triggerJelly(btn); });
     btn.addEventListener('animationend', ()=> btn.classList.remove('jelly-bounce'));
   });
 
@@ -275,7 +304,7 @@
   function fitBoard(){
     const vb=svg.viewBox.baseVal;
     const ratio=vb.height/vb.width;
-    const availH=(document.fullscreenElement?window.innerHeight:window.innerHeight) - topbar.offsetHeight - 20;
+    const availH=window.innerHeight - topbar.offsetHeight - document.querySelector('.playerbar').offsetHeight - 20;
     const availW=document.documentElement.clientWidth - 24;
     const hFromW=availW * ratio;
     const wFromH=availH / ratio;
@@ -298,13 +327,19 @@
     doubles:{A1:{x:3250,y:10800},A2:{x:3250,y:9000},B1:{x:3250,y:4800},B2:{x:3250,y:3200},S:{x:3250,y:6500}}
   };
   let state={mode:'doubles',positions:clone(defaults.doubles),rotated:false};
+
+  // 記錄資料
   let recording=false, steps=[], startSnapshot=null;
-  let isPlaying=false;
+
+  // 回放資料（新：時間軸）
+  let isPlaying=false, isPaused=false;
+  let timeline=null;            // {segments:[{t0,t1,role,from,to,mode}], total}
+  let playStartStamp=0;         // raf 開始時的 performance.now()
+  let baseElapsed=0;            // 暫停時保留的已過時間
+  let rafId=null;
 
   // 初始化
-  modeDoubles.checked=true;
-  renderMode(state.mode);
-  renderPositions();
+  modeDoubles.checked=true; renderMode(state.mode); renderPositions();
 
   // 模式切換
   modeSingles.addEventListener('change', ()=>{ if(modeSingles.checked) setMode('singles'); });
@@ -312,8 +347,7 @@
   function setMode(m){
     state.mode = m==='singles'?'singles':'doubles';
     state.positions = clone(defaults[state.mode]);
-    renderMode(state.mode);
-    renderPositions(true);
+    renderMode(state.mode); renderPositions(true);
   }
   function renderMode(m){
     const showPair = (m==='doubles');
@@ -323,8 +357,7 @@
 
   // 重置
   resetBtn.addEventListener('click', ()=>{
-    state.positions = clone(defaults[state.mode]);
-    renderPositions(true);
+    state.positions = clone(defaults[state.mode]); renderPositions(true);
     flash(resetBtn);
   });
 
@@ -340,31 +373,27 @@
       world.setAttribute('transform', ``);
       document.documentElement.classList.remove('rot-on');
     }
-    fitBoard();
-    flash(rotateBtn);
+    fitBoard(); flash(rotateBtn);
   });
 
-  // 全螢幕切換
+  // 全螢幕（切換整個文件，保留工具列）
   fsBtn.addEventListener('click', async ()=>{
     try{
       if(!document.fullscreenElement){
-        await (stage.requestFullscreen?.call(stage) || stage.webkitRequestFullscreen?.());
+        await (document.documentElement.requestFullscreen?.() || document.documentElement.webkitRequestFullscreen?.());
       }else{
-        await (document.exitFullscreen?.call(document) || document.webkitExitFullscreen?.());
+        await (document.exitFullscreen?.() || document.webkitExitFullscreen?.());
       }
       triggerJelly(fsBtn);
-    }catch(e){
-      console.warn('全螢幕錯誤', e);
-    }
+    }catch(e){ console.warn('全螢幕錯誤', e); }
   });
 
-  // 拖曳（加入「放開」果凍回彈）
-  const svgEls = svg.querySelectorAll('.draggable');
-  svgEls.forEach(makeDraggable);
+  // 拖曳（加「放開」果凍回彈）
+  svg.querySelectorAll('.draggable').forEach(makeDraggable);
   function makeDraggable(el){
     el.style.touchAction='none';
     el.addEventListener('pointerdown', (e)=>{
-      if(isPlaying) return;
+      if(isPlaying) return; // 播放中禁止手動拖拉
       e.preventDefault();
       el.setPointerCapture(e.pointerId);
       el.classList.add('dragging');
@@ -389,15 +418,8 @@
         svg.removeEventListener('pointerup', up);
         svg.removeEventListener('pointercancel', up);
 
-        // 果凍回彈：只對該棋子的 .icon 做彈跳，不影響座標
         const icon = el.querySelector('.icon');
-        if(icon){
-          icon.classList.remove('jelly-bounce');
-          // 重新觸發動畫
-          void icon.getBoundingClientRect();
-          icon.classList.add('jelly-bounce');
-          icon.addEventListener('animationend', ()=> icon.classList.remove('jelly-bounce'), {once:true});
-        }
+        if(icon){ triggerJelly(icon); }
 
         if(recording){
           steps.push({ role, from:{...init}, to:{...state.positions[role]}, mode: state.mode });
@@ -418,10 +440,8 @@
   }
   function clamp(x,y,role){
     const r=(role==='S')?RAD.shuttle:RAD.piece;
-    return {
-      x: Math.min(BOUNDS.xMax - r, Math.max(BOUNDS.xMin + r, x)),
-      y: Math.min(BOUNDS.yMax - r, Math.max(BOUNDS.yMin + r, y))
-    };
+    return { x: Math.min(BOUNDS.xMax - r, Math.max(BOUNDS.xMin + r, x)),
+             y: Math.min(BOUNDS.yMax - r, Math.max(BOUNDS.yMin + r, y)) };
   }
   function setPos(el,x,y){ el.setAttribute('transform',`translate(${x},${y})`); }
   function renderPositions(){
@@ -436,83 +456,194 @@
   }
   function clone(o){ return JSON.parse(JSON.stringify(o)); }
 
-  // ===== 記錄 / 回放（回放先回到開始記錄的站位）=====
+  /* ========= 記錄 ========= */
   recStartBtn.addEventListener('click', ()=>{
+    if(isPlaying) return;
     steps=[]; recording=true;
     startSnapshot={ mode: state.mode, positions: clone(state.positions) };
     recStartBtn.disabled=true; recStopBtn.disabled=false; playBtn.disabled=true;
+    pauseBtn.disabled=stopBtn.disabled=true;
     flash(recStartBtn);
   });
   recStopBtn.addEventListener('click', ()=>{
     recording=false;
     recStartBtn.disabled=false; recStopBtn.disabled=true; playBtn.disabled=steps.length===0;
+    pauseBtn.disabled=stopBtn.disabled=true;
     flash(recStopBtn);
   });
 
+  /* ========= 回放（時間軸版：支援暫停/拖曳/停止） ========= */
   playBtn.addEventListener('click', ()=>{
-    if(steps.length===0||isPlaying) return;
-    isPlaying=true; playOverlay.classList.add('playing');
-    recStartBtn.disabled=recStopBtn.disabled=true;
-    modeSingles.disabled=modeDoubles.disabled=true;
-    resetBtn.disabled=rotateBtn.disabled=fsBtn.disabled=true;
-
-    const ease=(t)=> t<.5?2*t*t : 1-Math.pow(-2*t+2,2)/2;
-    function animateMove(el,from,to,dur){ return new Promise(res=>{
-      const t0=performance.now();
-      const tick=(now)=>{
-        const p=Math.min(1,(now-t0)/dur), e=ease(p);
-        setPos(el, from.x+(to.x-from.x)*e, from.y+(to.y-from.y)*e);
-        if(p<1 && isPlaying) requestAnimationFrame(tick); else res();
-      };
-      requestAnimationFrame(tick);
-    });}
-
-    (async()=>{
-      // 歸位到記錄起始
-      if(startSnapshot){
-        state.mode=startSnapshot.mode;
-        modeSingles.checked = (state.mode==='singles');
-        modeDoubles.checked = (state.mode==='doubles');
-        renderMode(state.mode);
-        state.positions=clone(startSnapshot.positions);
-        renderPositions(true);
-      }
-      // 播放步驟
-      for(const step of steps){
-        if(!isPlaying) break;
-        if(state.mode!==step.mode){
-          state.mode=step.mode;
-          modeSingles.checked = (state.mode==='singles');
-          modeDoubles.checked = (state.mode==='doubles');
-          renderMode(state.mode);
-        }
-        const el=document.getElementById(step.role==='S'?'SHUTTLE':step.role);
-        setPos(el, step.from.x, step.from.y);
-        const dist=Math.hypot(step.to.x-step.from.x, step.to.y-step.from.y);
-        const dur=Math.max(250, 600*(dist/1800));
-        await animateMove(el, step.from, step.to, dur);
-        state.positions[step.role]={...step.to};
-        // 每步到位也給一下果凍回彈（看起來更有臨場感）
-        const icon=el.querySelector('.icon'); if(icon){ triggerJelly(icon); }
-      }
-      isPlaying=false; playOverlay.classList.remove('playing');
-      recStartBtn.disabled=false; recStopBtn.disabled=true;
-      modeSingles.disabled=modeDoubles.disabled=false;
-      resetBtn.disabled=rotateBtn.disabled=fsBtn.disabled=false;
-      flash(playBtn);
-    })();
+    if(steps.length===0) return;
+    if(!timeline) buildTimeline();
+    isPlaying=true; isPaused=false;
+    enableDuringPlay(true);
+    playOverlay.classList.add('playing');
+    playStartStamp=performance.now();
+    rafId=requestAnimationFrame(tick);
+    triggerJelly(playBtn);
   });
 
-  // 小動效（按鈕/板子亮一下）
+  pauseBtn.addEventListener('click', ()=>{
+    if(!isPlaying) return;
+    isPaused=!isPaused;
+    if(isPaused){
+      baseElapsed = getElapsed();
+      cancelAnimationFrame(rafId);
+      pauseBtn.textContent='▶️ 繼續';
+    }else{
+      playStartStamp = performance.now();
+      rafId = requestAnimationFrame(tick);
+      pauseBtn.textContent='⏸️ 暫停';
+    }
+    triggerJelly(pauseBtn);
+  });
+
+  stopBtn.addEventListener('click', stopPlayback);
+
+  // 進度條：拖曳/點擊即時定位
+  progress.addEventListener('input', ()=>{
+    if(!timeline) return;
+    const t = Number(progress.value);
+    setAt(t);
+    updateTimeLabels(t, timeline.total);
+    // jelly on thumb (小趣味)
+    triggerJelly(progress);
+  });
+
+  function stopPlayback(){
+    if(!timeline) return;
+    isPlaying=false; isPaused=false;
+    cancelAnimationFrame(rafId);
+    playOverlay.classList.remove('playing');
+    enableDuringPlay(false);
+    // 回到起始站位
+    if(startSnapshot){
+      state.mode=startSnapshot.mode; renderMode(state.mode);
+      state.positions=clone(startSnapshot.positions); renderPositions(true);
+    }
+    baseElapsed=0; progress.value=0; progress.style.setProperty('--p','0%');
+    updateTimeLabels(0, timeline.total);
+    pauseBtn.textContent='⏸️ 暫停';
+    triggerJelly(stopBtn);
+  }
+
+  function enableDuringPlay(playing){
+    playBtn.disabled = playing;   // 播放時關閉「播放」鍵
+    pauseBtn.disabled= !playing;  // 可暫停
+    stopBtn.disabled = !playing;  // 可停止
+    // 允許全螢幕 / 旋轉 / 模式切換 / 重置：照常可用（你若想播放時鎖定，可改為 disabled）
+    recStartBtn.disabled = true;  // 播放時不允許開始新記錄
+    recStopBtn.disabled  = true;
+  }
+
+  function buildTimeline(){
+    // 計算每步的時間（與舊版一致的距離映射）
+    const segments=[];
+    let t=0;
+    let lastMode = startSnapshot? startSnapshot.mode : state.mode;
+    const posAtStart = startSnapshot? clone(startSnapshot.positions) : clone(state.positions);
+
+    // 初始為起點（不生成 segment）
+    steps.forEach(step=>{
+      const from = step.from, to = step.to;
+      const dist = Math.hypot(to.x-from.x, to.y-from.y);
+      const dur  = Math.max(250, 600*(dist/1800)); // ms
+      segments.push({t0:t, t1:t+dur, role:step.role, from, to, mode:step.mode});
+      t += dur;
+      lastMode = step.mode;
+    });
+
+    timeline = {segments, total: t, startPositions: posAtStart, startMode: startSnapshot? startSnapshot.mode : state.mode};
+    // 更新 UI
+    progress.max = Math.max(1, Math.round(t));
+    progress.value = 0;
+    progress.style.setProperty('--p','0%');
+    updateTimeLabels(0,t);
+  }
+
+  function tick(now){
+    const elapsed = getElapsed(now);
+    if(elapsed>=timeline.total){
+      setAt(timeline.total); // 播放到尾
+      updateTimeLabels(timeline.total, timeline.total);
+      stopPlayback();
+      return;
+    }
+    setAt(elapsed);
+    updateTimeLabels(elapsed, timeline.total);
+    rafId=requestAnimationFrame(tick);
+  }
+
+  function getElapsed(now){
+    if(isPaused) return baseElapsed;
+    if(!now) now=performance.now();
+    return baseElapsed + (now - playStartStamp);
+  }
+
+  function setAt(timeMs){
+    // 設定模式 & 位置（按段落插值）
+    let currentMode = timeline.startMode;
+    const pos = clone(timeline.startPositions);
+
+    for(const seg of timeline.segments){
+      if(timeMs>=seg.t1){
+        // 完成此段
+        pos[seg.role] = {...seg.to};
+        currentMode = seg.mode;
+        continue;
+      }else if(timeMs>=seg.t0 && timeMs<seg.t1){
+        // 正在此段
+        const p = (timeMs - seg.t0) / (seg.t1 - seg.t0);
+        const e = p<.5? 2*p*p : 1-Math.pow(-2*p+2,2)/2; // ease
+        pos[seg.role] = { x: seg.from.x + (seg.to.x-seg.from.x)*e,
+                          y: seg.from.y + (seg.to.y-seg.from.y)*e };
+        currentMode = seg.mode;
+        break; // 後面段尚未開始
+      }else{
+        // 尚未開始的段，不動
+        break;
+      }
+    }
+
+    state.mode = currentMode;
+    renderMode(state.mode);
+    // 套用到 DOM
+    ['A1','A2','B1','B2','S'].forEach(id=>{
+      if(state.mode==='singles'&&(id==='A2'||id==='B2')) return;
+      const el=document.getElementById(id==='S'?'SHUTTLE':id);
+      const p = pos[id] || state.positions[id] || defaults[state.mode][id];
+      el && setPos(el,p.x,p.y);
+    });
+
+    // 更新 range 背景百分比
+    const pct = Math.max(0, Math.min(100, (timeMs / timeline.total)*100));
+    progress.value = Math.round(timeMs);
+    progress.style.setProperty('--p', pct + '%');
+  }
+
+  function updateTimeLabels(cur,total){
+    curTimeEl.textContent = formatMs(cur);
+    totTimeEl.textContent = formatMs(total);
+  }
+  function formatMs(ms){
+    const t=Math.max(0, Math.round(ms));
+    const m = Math.floor(t/60000);
+    const s = Math.floor((t%60000)/1000);
+    const d = Math.floor((t%1000)/100);
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${d}`;
+  }
+
+  // 小動效
   function flash(el){
     el.animate([{boxShadow:'var(--shadow)'},{boxShadow:'0 0 0 6px rgba(255,127,191,.25)'}],
                {duration:220, direction:'alternate', iterations:2});
   }
   function triggerJelly(el){
     el.classList.remove('jelly-bounce');
-    void el.offsetWidth; // reflow 重置動畫
-    el.classList.add('jelly-bounce');
+    void el.offsetWidth; el.classList.add('jelly-bounce');
   }
+
 })();
 </script>
 </body>
